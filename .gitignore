@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+db.sqlite3
+
+# Models (large binary files)
+models/
+models.zip
+
+# Environment
+.env*
+!.env.example
+
+# OS
+.DS_Store
