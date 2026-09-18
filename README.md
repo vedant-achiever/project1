@@ -71,3 +71,9 @@ The local AI engine stores quantized GGUF models in the `models/` folder:
 - **Model Check**: Verify AI status at `http://127.0.0.1:8000/api/health`.
 - **Large Files**: The backend supports file uploads up to 50 MB by default.
 
+## git hub project update 
+- **git add .**
+- **git commit -m "first commit"**
+- **git push -u origin main**
+
+# CSV-files-compilation-analysis
