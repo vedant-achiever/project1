@@ -95,15 +95,6 @@
                         <span class="text-slate-600">•</span>
                         <span>Records: <strong id="badge-records-count" class="text-white">0</strong></span>
                     </div>
-
-                    <!-- Load Sample Data Button -->
-                    <button
-                        onclick="loadSampleTelemetry()"
-                        class="cursor-pointer inline-flex items-center space-x-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-md shadow-indigo-600/30 border border-indigo-400/30 active:scale-95"
-                    >
-                        <i data-lucide="database" class="w-3.5 h-3.5"></i>
-                        <span>Load Sample Telemetry</span>
-                    </button>
                 </div>
             </div>
 
@@ -172,60 +163,6 @@
 
     <!-- Complete In-HTML JavaScript Logic (Zero External JS Files) -->
     <script>
-        /* =========================================================================
-           1. SAMPLE DATASETS
-           ========================================================================= */
-        const SAMPLE_FILES = [
-            {
-                filename: "turbine_vibration_test_001.csv",
-                content: `Timestamp,Test_ID,Component_ID,Run_ID,Vibration,Vib_Level,Temperature_C,Operating_Mode
-2026-08-19T09:00:00Z,T-001,TURB-901,RUN-A,0.12,0.12,45.2,CRUISE
-2026-08-19T09:00:01Z,T-001,TURB-901,RUN-A,0.14,0.13,45.5,CRUISE
-2026-08-19T09:00:02Z,T-001,TURB-901,RUN-A,0.15,0.14,45.8,CRUISE
-2026-08-19T09:00:03Z,T-001,TURB-901,RUN-A,0.35,0.34,52.1,BOOST
-2026-08-19T09:00:04Z,T-001,TURB-901,RUN-A,0.88,0.87,78.4,MAX_LOAD
-2026-08-19T09:00:05Z,T-001,TURB-901,RUN-A,0.92,0.91,84.6,MAX_LOAD
-2026-08-19T09:00:06Z,T-001,TURB-901,RUN-A,0.45,0.44,60.2,CRUISE
-2026-08-19T09:00:07Z,T-001,TURB-901,RUN-A,0.16,0.15,47.0,CRUISE`
-            },
-            {
-                filename: "avionics_thermal_test_001.csv",
-                content: `Timestamp,Test_ID,Component_ID,Run_ID,Temp,Voltage_V,Current_A,Status
-2026-08-19T09:00:00.050Z,T-001,AV-402,RUN-A,44.8,28.4,12.1,NOMINAL
-2026-08-19T09:00:01.050Z,T-001,AV-402,RUN-A,45.1,28.3,12.2,NOMINAL
-2026-08-19T09:00:02.050Z,T-001,AV-402,RUN-A,45.6,28.4,12.0,NOMINAL
-2026-08-19T09:00:03.050Z,T-001,AV-402,RUN-A,51.9,27.9,15.4,ELEVATED
-2026-08-19T09:00:04.050Z,T-001,AV-402,RUN-A,79.2,26.5,22.8,WARNING
-2026-08-19T09:00:05.050Z,T-001,AV-402,RUN-A,88.5,25.8,26.1,CRITICAL
-2026-08-19T09:00:06.050Z,T-001,AV-402,RUN-A,61.0,27.2,18.0,WARNING
-2026-08-19T09:00:07.050Z,T-001,AV-402,RUN-A,46.5,28.1,12.5,NOMINAL`
-            },
-            {
-                filename: "hydraulic_pressure_test_002.csv",
-                content: `Timestamp,Test_ID,Component_ID,Run_ID,Pressure_kPa,Flow_Rate,Temperature_F
-2026-08-19T10:15:00Z,T-002,HYD-105,RUN-B,3000,45.2,112
-2026-08-19T10:15:01Z,T-002,HYD-105,RUN-B,2995,45.0,113
-2026-08-19T10:15:02Z,T-002,HYD-105,RUN-B,3120,48.5,118
-2026-08-19T10:15:03Z,T-002,HYD-105,RUN-B,3450,55.1,135
-2026-08-19T10:15:04Z,T-002,HYD-105,RUN-B,3890,62.3,165
-2026-08-19T10:15:05Z,T-002,HYD-105,RUN-B,3950,63.0,172
-2026-08-19T10:15:06Z,T-002,HYD-105,RUN-B,3200,49.0,130
-2026-08-19T10:15:07Z,T-002,HYD-105,RUN-B,3010,45.5,115`
-            },
-            {
-                filename: "electrical_power_test_002.csv",
-                content: `Timestamp,Test_ID,Component_ID,Run_ID,Voltage,Current,Power_kW,Status
-2026-08-19T10:15:00.020Z,T-002,PWR-301,RUN-B,27.5,10.2,280.5,NOMINAL
-2026-08-19T10:15:01.020Z,T-002,PWR-301,RUN-B,27.4,10.3,282.1,NOMINAL
-2026-08-19T10:15:02.020Z,T-002,PWR-301,RUN-B,26.9,12.5,336.2,NOMINAL
-2026-08-19T10:15:03.020Z,T-002,PWR-301,RUN-B,25.2,16.8,423.3,WARNING
-2026-08-19T10:15:04.020Z,T-002,PWR-301,RUN-B,23.1,21.4,494.3,CRITICAL
-2026-08-19T10:15:05.020Z,T-002,PWR-301,RUN-B,22.5,23.0,517.5,CRITICAL
-2026-08-19T10:15:06.020Z,T-002,PWR-301,RUN-B,26.0,14.1,366.6,WARNING
-2026-08-19T10:15:07.020Z,T-002,PWR-301,RUN-B,27.3,10.5,286.6,NOMINAL`
-            }
-        ];
-
         /* =========================================================================
            2. CENTRAL REACTIVE APPLICATION STATE
            ========================================================================= */
@@ -299,11 +236,12 @@ Hello! I am **Aegis**, your specialized defence test data engineering assistant.
             return col.charAt(0).toUpperCase() + col.slice(1);
         }
 
-        function parseCSVText(filename, rawText) {
+        function parseCSVText(filename, rawText, originalSize) {
             const results = Papa.parse(rawText, {
                 header: true,
                 dynamicTyping: true,
                 skipEmptyLines: true,
+                preview: 500 // Reduced limit to prevent Out-Of-Memory on 1000+ files
             });
 
             const data = (results.data || []).map(row => {
@@ -345,11 +283,11 @@ Hello! I am **Aegis**, your specialized defence test data engineering assistant.
             return {
                 id: 'file_' + Math.random().toString(36).substring(2, 9),
                 filename,
-                fileSize: new Blob([rawText]).size,
+                fileSize: originalSize !== undefined ? originalSize : new Blob([rawText]).size,
                 rowCount: data.length,
                 columnCount: columns.length,
                 columns,
-                rawText,
+
                 parsedData: data,
                 detectedTimestamps,
                 detectedIdentifiers,
@@ -626,18 +564,6 @@ Hello! I am **Aegis**, your specialized defence test data engineering assistant.
             document.getElementById('badge-records-count').textContent = state.combinedData.length;
         }
 
-        function loadSampleTelemetry() {
-            const loaded = SAMPLE_FILES.map(sf => parseCSVText(sf.filename, sf.content));
-            state.files = loaded;
-            state.attributes = extractAttributes(loaded);
-            state.combinedData = combineDatasets(loaded, state.combinationConfig);
-            state.qualityReport = generateQualityReport(state.combinedData, loaded);
-
-            updateGlobalCounters();
-            renderActiveView(state.activeTab);
-            lucide.createIcons();
-        }
-
         function renderNavTabs() {
             const nav = document.getElementById('nav-tabs');
             nav.innerHTML = NAV_TABS.map(tab => {
@@ -850,20 +776,62 @@ Hello! I am **Aegis**, your specialized defence test data engineering assistant.
 
         function handleFileUpload(e) {
             const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            if (state.files.length > 0) {
+                const append = confirm("You already have telemetry files loaded. Combine new files with existing ones?\n\nClick OK to combine, or Cancel to replace existing files.");
+                if (!append) {
+                    state.files = [];
+                }
+            }
+
+            let parsedCount = 0;
+            const originalButtonContent = e.target.previousElementSibling ? e.target.previousElementSibling.innerHTML : '';
+            
+            // Basic UI indicator for loading
+            if (e.target.previousElementSibling) {
+                e.target.previousElementSibling.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin text-indigo-400"></i><p class="mt-2 text-sm text-slate-300 font-semibold">Loading 0 / ${files.length} files...</p>`;
+                lucide.createIcons();
+            }
+
             files.forEach(f => {
+                const MAX_READ_SIZE = 5 * 1024 * 1024; // Limit to 5MB to prevent memory crash
+                const blobToRead = f.size > MAX_READ_SIZE ? f.slice(0, MAX_READ_SIZE) : f;
+                
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    const parsed = parseCSVText(f.name, event.target.result);
+                    const parsed = parseCSVText(f.name, event.target.result, f.size);
                     state.files.push(parsed);
-                    state.attributes = extractAttributes(state.files);
-                    state.combinedData = combineDatasets(state.files, state.combinationConfig);
-                    state.qualityReport = generateQualityReport(state.combinedData, state.files);
-                    updateGlobalCounters();
-                    renderFilesView();
-                    lucide.createIcons();
+                    parsedCount++;
+                    
+                    if (e.target.previousElementSibling) {
+                        e.target.previousElementSibling.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin text-indigo-400"></i><p class="mt-2 text-sm text-slate-300 font-semibold">Loading ${parsedCount} / ${files.length} files...</p>`;
+                        lucide.createIcons();
+                    }
+
+                    // Once ALL files in the batch are processed, trigger the heavy rendering / data combining
+                    if (parsedCount === files.length) {
+                        state.attributes = extractAttributes(state.files);
+                        state.combinedData = combineDatasets(state.files, state.combinationConfig);
+                        state.qualityReport = generateQualityReport(state.combinedData, state.files);
+                        
+                        updateGlobalCounters();
+                        renderFilesView();
+                        
+                        // Restore button UI
+                        if (e.target.previousElementSibling) {
+                            e.target.previousElementSibling.innerHTML = originalButtonContent;
+                        }
+                        lucide.createIcons();
+                        
+                        // Automatically jump to attributes view since we just loaded a big batch
+                        setActiveTab('attributes');
+                    }
                 };
-                reader.readAsText(f);
+                reader.readAsText(blobToRead);
             });
+            // Clear input to allow re-uploading the same file
+            e.target.value = '';
         }
 
         function deleteFile(idx) {
@@ -1370,6 +1338,7 @@ Hello! I am **Aegis**, your specialized defence test data engineering assistant.
 
                 <!-- Quick Inquiry Chips -->
                 <div class="flex flex-wrap gap-2">
+                    <button onclick="clearChatHistory()" class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-900/40 text-rose-300 border border-rose-800 hover:border-rose-500 hover:bg-rose-900/60 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline mr-1"></i>Clear History</button>
                     <button onclick="sendAIQuery('Which components reached high temperatures or thermal stress?')" class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-700 hover:border-indigo-500">🌡️ High Temperatures</button>
                     <button onclick="sendAIQuery('Detect any electrical voltage dips or battery power drops in the dataset.')" class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-700 hover:border-indigo-500">⚡ Voltage Drops</button>
                     <button onclick="sendAIQuery('Which components exhibited high vibration levels exceeding safety margins?')" class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-700 hover:border-indigo-500">〰️ Vibration Stress</button>
@@ -1457,6 +1426,19 @@ Hello! I am **Aegis**, your specialized defence test data engineering assistant.
                     txt.className = 'text-cyan-400 font-mono text-[11px]';
                 }
             }
+        }
+
+        function clearChatHistory() {
+            state.chatHistory = [
+                {
+                    id: 'msg_welcome',
+                    role: 'assistant',
+                    content: `### 🛡️ Aegis Defence Telemetry Intelligence Assistant\n**Local Engine**: \`BAAI/BGE-M3 GGUF (Quantized 1024-dim Vector Engine • Metal GPU)\`\n\nHello! I am **Aegis**, your specialized defence test data engineering assistant. I monitor synchronized multi-sensor telemetry records across all test runs.\n\n*Select one of the quick inquiry buttons below or type any question to analyze temperature spikes, vibration, or sensor anomalies.*`,
+                    timestamp: new Date().toLocaleTimeString()
+                }
+            ];
+            renderAIView();
+            lucide.createIcons();
         }
 
         async function sendAIQuery(queryText) {
@@ -1574,7 +1556,6 @@ Hello! I am **Aegis**, your specialized defence test data engineering assistant.
            ========================================================================= */
         document.addEventListener('DOMContentLoaded', () => {
             renderNavTabs();
-            loadSampleTelemetry();
             setActiveTab('dashboard');
             checkBackendHealth();
         });
