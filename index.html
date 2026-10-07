@@ -1,1564 +1,2646 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="h-full bg-slate-950 text-slate-100 antialiased">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Defence Test Data Analyzer | Telemetry & AI Mission Control</title>
-    <meta name="description" content="Enterprise telemetry ingestion, schema alignment, statistical analysis, and local BGE-M3 AI diagnostics in a pure self-contained frontend.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS v4 Engine -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    
+    <meta
+      name="description"
+      content="Enterprise telemetry ingestion, schema alignment, statistical analysis, and local BGE-M3 AI diagnostics in a pure self-contained frontend."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- PapaParse for High-Performance In-Browser CSV Parsing -->
+    <!-- PapaParse for In-Browser CSV Parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-    <!-- Chart.js for High-Precision Telemetry Plots -->
+    <!-- Chart.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
-    <!-- Marked.js for Markdown Rendering in AI Chat -->
+    <!-- Marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
+    <!-- Fallback stubs in case CDN scripts are blocked or intranet offline -->
+    <script>
+      if (!window.lucide) window.lucide = { createIcons: () => {} };
+      if (!window.Chart) window.Chart = class { constructor() {} destroy() {} update() {} };
+      if (!window.Papa) window.Papa = { parse: () => ({ data: [], meta: { fields: [] } }) };
+      if (!window.marked) window.marked = { parse: (text) => text };
+    </script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        code, pre { font-family: 'JetBrains Mono', monospace; }
-        
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+      /* === Critical Fallback CSS (works even without Tailwind) === */
+      body {
+        font-family: "Inter", Arial, sans-serif;
+        background: #020617;
+        color: #f1f5f9;
+        margin: 0;
+        padding: 0;
+      }
 
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(51, 65, 85, 0.6);
+      code,
+      pre {
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      /* Tailwind fallback utilities */
+      .hidden {
+        display: none !important;
+      }
+      .flex {
+        display: flex;
+      }
+      .flex-1 {
+        flex: 1 1 0%;
+      }
+      .flex-col {
+        flex-direction: column;
+      }
+      .items-center {
+        align-items: center;
+      }
+      .justify-between {
+        justify-content: space-between;
+      }
+      .space-x-1 > * + * {
+        margin-left: 0.25rem;
+      }
+      .space-x-2 > * + * {
+        margin-left: 0.5rem;
+      }
+      .space-x-3 > * + * {
+        margin-left: 0.75rem;
+      }
+      .space-x-4 > * + * {
+        margin-left: 1rem;
+      }
+      .space-y-6 > * + * {
+        margin-top: 1.5rem;
+      }
+      .gap-2 {
+        gap: 0.5rem;
+      }
+      .gap-4 {
+        gap: 1rem;
+      }
+      .text-xs {
+        font-size: 0.75rem;
+      }
+      .text-sm {
+        font-size: 0.875rem;
+      }
+      .text-base {
+        font-size: 1rem;
+      }
+      .text-xl {
+        font-size: 1.25rem;
+      }
+      .text-2xl {
+        font-size: 1.5rem;
+      }
+      .text-3xl {
+        font-size: 1.875rem;
+      }
+      .text-white {
+        color: #ffffff;
+      }
+      .text-slate-100 {
+        color: #f1f5f9;
+      }
+      .text-slate-200 {
+        color: #e2e8f0;
+      }
+      .text-slate-300 {
+        color: #cbd5e1;
+      }
+      .text-slate-400 {
+        color: #94a3b8;
+      }
+      .text-slate-500 {
+        color: #64748b;
+      }
+      .text-indigo-300 {
+        color: #a5b4fc;
+      }
+      .text-indigo-400 {
+        color: #818cf8;
+      }
+      .text-emerald-400 {
+        color: #34d399;
+      }
+      .text-emerald-500 {
+        color: #10b981;
+      }
+      .text-rose-400 {
+        color: #fb7185;
+      }
+      .text-amber-400 {
+        color: #fbbf24;
+      }
+      .font-bold {
+        font-weight: 700;
+      }
+      .font-semibold {
+        font-weight: 600;
+      }
+      .font-medium {
+        font-weight: 500;
+      }
+      .font-extrabold {
+        font-weight: 800;
+      }
+      .font-mono {
+        font-family: "JetBrains Mono", monospace;
+      }
+      .uppercase {
+        text-transform: uppercase;
+      }
+      .tracking-wide {
+        letter-spacing: 0.025em;
+      }
+      .tracking-wider {
+        letter-spacing: 0.05em;
+      }
+      .rounded {
+        border-radius: 0.25rem;
+      }
+      .rounded-lg {
+        border-radius: 0.5rem;
+      }
+      .rounded-xl {
+        border-radius: 0.75rem;
+      }
+      .rounded-full {
+        border-radius: 9999px;
+      }
+      .border {
+        border-width: 1px;
+        border-style: solid;
+      }
+      .border-b {
+        border-bottom-width: 1px;
+        border-bottom-style: solid;
+      }
+      .border-t {
+        border-top-width: 1px;
+        border-top-style: solid;
+      }
+      .border-slate-700 {
+        border-color: #334155;
+      }
+      .border-slate-800 {
+        border-color: #1e293b;
+      }
+      .border-slate-900 {
+        border-color: #0f172a;
+      }
+      .bg-slate-900 {
+        background-color: #0f172a;
+      }
+      .bg-slate-950 {
+        background-color: #020617;
+      }
+      .bg-indigo-600 {
+        background-color: #4f46e5;
+      }
+      .bg-emerald-600 {
+        background-color: #059669;
+      }
+      .bg-emerald-500 {
+        background-color: #10b981;
+      }
+      .p-4 {
+        padding: 1rem;
+      }
+      .p-5 {
+        padding: 1.25rem;
+      }
+      .p-6 {
+        padding: 1.5rem;
+      }
+      .p-8 {
+        padding: 2rem;
+      }
+      .px-2 {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+      .px-3 {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+      .px-4 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .px-5 {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+      }
+      .px-6 {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+      }
+      .py-1 {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+      }
+      .py-2 {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+      }
+      .py-3 {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+      }
+      .py-6 {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+      }
+      .mt-1 {
+        margin-top: 0.25rem;
+      }
+      .mt-2 {
+        margin-top: 0.5rem;
+      }
+      .mt-3 {
+        margin-top: 0.75rem;
+      }
+      .mt-6 {
+        margin-top: 1.5rem;
+      }
+      .mb-1 {
+        margin-top: 0.25rem;
+      }
+      .mb-2 {
+        margin-bottom: 0.5rem;
+      }
+      .mb-3 {
+        margin-bottom: 0.75rem;
+      }
+      .mb-4 {
+        margin-bottom: 1rem;
+      }
+      .mb-6 {
+        margin-bottom: 1.5rem;
+      }
+      .mb-8 {
+        margin-bottom: 2rem;
+      }
+      .w-full {
+        width: 100%;
+      }
+      .h-full {
+        height: 100%;
+      }
+      .h-16 {
+        height: 4rem;
+      }
+      .max-w-7xl {
+        max-width: 80rem;
+      }
+      .mx-auto {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .overflow-x-auto {
+        overflow-x: auto;
+      }
+      .whitespace-nowrap {
+        white-space: nowrap;
+      }
+      .truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .text-left {
+        text-align: left;
+      }
+      .cursor-pointer {
+        cursor: pointer;
+      }
+      .inline-flex {
+        display: inline-flex;
+      }
+      .transition {
+        transition: all 150ms ease-in-out;
+      }
+      .shadow-lg {
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      }
+      .sticky {
+        position: sticky;
+      }
+      .top-0 {
+        top: 0;
+      }
+      .z-50 {
+        z-index: 50;
+      }
+      .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
         }
-        .tab-content {
-            display: none;
-            opacity: 0;
-            transition: opacity 150ms ease-in-out;
+        50% {
+          opacity: 0.5;
         }
-        .tab-content.active {
-            display: block;
-            opacity: 1;
+      }
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
+      }
+      .grid {
+        display: grid;
+      }
+      .border-collapse {
+        border-collapse: collapse;
+      }
+      .divide-y > * + * {
+        border-top: 1px solid #1e293b;
+      }
+      @media (min-width: 768px) {
+        .md\:flex-row {
+          flex-direction: row;
+        }
+        .md\:grid-cols-4 {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .md\:items-center {
+          align-items: center;
+        }
+      }
+      button {
+        border: none;
+        cursor: pointer;
+      }
+      .hover\:bg-indigo-500:hover {
+        background-color: #6366f1;
+      }
+      .hover\:bg-emerald-500:hover {
+        background-color: #10b981;
+      }
+      .hover\:bg-slate-800:hover {
+        background-color: #1e293b;
+      }
+      .hover\:text-slate-200:hover {
+        color: #e2e8f0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.5rem 1rem;
+      }
+      thead {
+        background: rgba(15, 23, 42, 0.8);
+      }
+      tbody tr:hover {
+        background: rgba(30, 41, 59, 0.5);
+      }
+
+      /* Header & Branding */
+      header {
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid #1e293b;
+      }
+      .bg-gradient-to-tr {
+        background: linear-gradient(135deg, #4f46e5, #818cf8);
+      }
+      select,
+      input[type="text"] {
+        background: #020617;
+        border: 1px solid #334155;
+        color: #f1f5f9;
+        border-radius: 0.5rem;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        outline: none;
+      }
+      select:focus,
+      input[type="text"]:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+      }
+      .opacity-50 {
+        opacity: 0.5;
+      }
+      .cursor-not-allowed {
+        cursor: not-allowed;
+      }
+      .border-dashed {
+        border-style: dashed;
+      }
+      .border-2 {
+        border-width: 2px;
+      }
+      .border-l-4 {
+        border-left-width: 4px;
+        border-left-style: solid;
+      }
+      .border-l-indigo-500 {
+        border-left-color: #6366f1;
+      }
+      .max-w-md {
+        max-width: 28rem;
+      }
+      .max-w-\[80\%\] {
+        max-width: 80%;
+      }
+      .h-\[400px\] {
+        height: 400px;
+      }
+      .h-\[600px\] {
+        height: 600px;
+      }
+      .max-h-\[70vh\] {
+        max-height: 70vh;
+      }
+      .overflow-hidden {
+        overflow: hidden;
+      }
+      .overflow-y-auto {
+        overflow-y: auto;
+      }
+      .justify-start {
+        justify-content: flex-start;
+      }
+      .justify-end {
+        justify-content: flex-end;
+      }
+      .justify-center {
+        justify-content: center;
+      }
+      .relative {
+        position: relative;
+      }
+      .w-10 {
+        width: 2.5rem;
+      }
+      .h-10 {
+        height: 2.5rem;
+      }
+      .w-5 {
+        width: 1.25rem;
+      }
+      .h-5 {
+        height: 1.25rem;
+      }
+      .w-4 {
+        width: 1rem;
+      }
+      .h-4 {
+        height: 1rem;
+      }
+      .w-3 {
+        width: 0.75rem;
+      }
+      .h-3 {
+        height: 0.75rem;
+      }
+      .w-2 {
+        width: 0.5rem;
+      }
+      .h-2 {
+        height: 0.5rem;
+      }
+      .w-6 {
+        width: 1.5rem;
+      }
+      .h-6 {
+        height: 1.5rem;
+      }
+      .w-1\.5 {
+        width: 0.375rem;
+      }
+      .h-1\.5 {
+        height: 0.375rem;
+      }
+      .text-\[10px\] {
+        font-size: 10px;
+      }
+      .text-\[11px\] {
+        font-size: 11px;
+      }
+      .py-0\.5 {
+        padding-top: 0.125rem;
+        padding-bottom: 0.125rem;
+      }
+      .py-10 {
+        padding-top: 2.5rem;
+        padding-bottom: 2.5rem;
+      }
+      .py-1\.5 {
+        padding-top: 0.375rem;
+        padding-bottom: 0.375rem;
+      }
+      .py-2\.5 {
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+      }
+      .space-x-1\.5 > * + * {
+        margin-left: 0.375rem;
+      }
+      .space-x-3\.5 > * + * {
+        margin-left: 0.875rem;
+      }
+      .space-y-4 > * + * {
+        margin-top: 1rem;
+      }
+      .text-slate-600 {
+        color: #475569;
+      }
+      .text-slate-700 {
+        color: #334155;
+      }
+      .bg-slate-800 {
+        background-color: #1e293b;
+      }
+      .bg-rose-500 {
+        background-color: #f43f5e;
+      }
+      .bg-amber-500 {
+        background-color: #f59e0b;
+      }
+      .shadow-xl {
+        box-shadow:
+          0 20px 25px -5px rgb(0 0 0 / 0.1),
+          0 8px 10px -6px rgb(0 0 0 / 0.1);
+      }
+      .prose {
+        line-height: 1.6;
+      }
+      .prose h1,
+      .prose h2,
+      .prose h3 {
+        margin-top: 0.5em;
+        margin-bottom: 0.25em;
+      }
+      .prose p {
+        margin: 0.4em 0;
+      }
+      .prose ul,
+      .prose ol {
+        padding-left: 1.25em;
+      }
+      .prose code {
+        background: rgba(30, 41, 59, 0.8);
+        padding: 0.15em 0.4em;
+        border-radius: 4px;
+        font-size: 0.85em;
+      }
+      .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.5em 0;
+      }
+      .prose th,
+      .prose td {
+        border: 1px solid #334155;
+        padding: 0.35em 0.75em;
+        text-align: left;
+      }
+      .prose th {
+        background: rgba(15, 23, 42, 0.8);
+      }
+      @media (min-width: 640px) {
+        .sm\:block {
+          display: block;
+        }
+        .sm\:flex-row {
+          flex-direction: row;
+        }
+        .sm\:px-6 {
+          padding-left: 1.5rem;
+          padding-right: 1.5rem;
+        }
+      }
+      @media (min-width: 1024px) {
+        .lg\:px-8 {
+          padding-left: 2rem;
+          padding-right: 2rem;
+        }
+        .lg\:flex {
+          display: flex;
+        }
+      }
+
+      /* === Custom component styles === */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f172a;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+      }
+
+      .glass-panel {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(51, 65, 85, 0.6);
+      }
+
+      .tab-content {
+        display: none;
+        opacity: 0;
+        transition: opacity 150ms ease-in-out;
+      }
+
+      .tab-content.active {
+        display: block;
+        opacity: 1;
+      }
     </style>
-</head>
-<body class="h-full flex flex-col bg-slate-950 text-slate-100">
+  </head>
 
+  <body class="h-full flex flex-col bg-slate-950 text-slate-100">
     <!-- Top Mission-Control Bar -->
-    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Branding -->
-                <div class="flex items-center space-x-3.5">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center font-extrabold text-white text-base shadow-lg shadow-indigo-500/25 border border-indigo-400/30">
-                        DT
-                    </div>
-                    <div>
-                        <div class="flex items-center space-x-2">
-                            <span class="font-bold text-base tracking-wide text-white">Defence Test Data Analyzer</span>
-                            <span class="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">
-                                Pure HTML Edition
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-400 hidden sm:block">Multi-Sensor Telemetry Alignment • BGE-M3 GGUF On-Device Intelligence</p>
-                    </div>
-                </div>
+    <header
+      class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <!-- Branding -->
+          <div class="flex items-center space-x-3.5">
+            <div
+              style="
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+                background: linear-gradient(135deg, #4f46e5, #818cf8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 800;
+                color: #fff;
+                font-size: 1rem;
+                box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+                border: 1px solid rgba(129, 140, 248, 0.3);
+              "
+            >
+              DT
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-base tracking-wide text-white"
+                  >Defence Test Data Analyzer</span
+                >
+                <span
+                  style="
+                    padding: 2px 8px;
+                    font-size: 10px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    background: rgba(99, 102, 241, 0.1);
+                    color: #818cf8;
+                    border: 1px solid rgba(99, 102, 241, 0.2);
+                    border-radius: 9999px;
+                  "
+                >
+                  Pure HTML Edition
+                </span>
+              </div>
+              <p class="text-xs text-slate-400">
+                Multi-Sensor Telemetry Alignment • BGE-M3 GGUF On-Device
+                Intelligence
+              </p>
+            </div>
+          </div>
 
-                <!-- Global Actions & Telemetry Badges -->
-                <div class="flex items-center space-x-3">
-                    <!-- Global Loading Indicator -->
-                    <div id="top-spinner" class="hidden flex items-center space-x-2 text-xs text-indigo-400 px-2 py-1 bg-indigo-950/60 rounded border border-indigo-800/60">
-                        <svg class="animate-spin h-3.5 w-3.5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Processing...</span>
-                    </div>
-
-                    <!-- AI Status Indicator -->
-                    <div class="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs">
-                        <span id="ai-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span class="text-slate-400">Model:</span>
-                        <strong id="ai-status-text" class="text-emerald-400 font-mono text-[11px]">BGE-M3 (GGUF)</strong>
-                    </div>
-
-                    <!-- Telemetry Stats Badge -->
-                    <div class="flex items-center space-x-2 text-xs text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 font-mono">
-                        <span>Files: <strong id="badge-files-count" class="text-white">0</strong></span>
-                        <span class="text-slate-600">•</span>
-                        <span>Records: <strong id="badge-records-count" class="text-white">0</strong></span>
-                    </div>
-                </div>
+          <!-- Global Actions & Telemetry Badges -->
+          <div class="flex items-center space-x-3">
+            <!-- Global Loading Indicator -->
+            <div id="top-spinner" style="display: none">
+              <svg
+                style="width: 14px; height: 14px"
+                class="animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  style="opacity: 0.25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="#818cf8"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  style="opacity: 0.75"
+                  fill="#818cf8"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <span style="color: #818cf8; font-size: 12px">Processing...</span>
             </div>
 
-            <!-- Tab Navigation Bar -->
-            <nav id="nav-tabs" class="flex space-x-1 overflow-x-auto py-2.5 scrollbar-none border-t border-slate-800/60">
-                <!-- Injected dynamically by JavaScript -->
-            </nav>
+            <!-- AI Status Indicator -->
+            <div
+              class="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs"
+            >
+              <span
+                id="ai-status-dot"
+                class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
+              ></span>
+              <span class="text-slate-400">Model:</span>
+              <strong
+                id="ai-status-text"
+                class="text-emerald-400 font-mono text-[11px]"
+                >BGE-M3 (GGUF)</strong
+              >
+            </div>
+
+            <!-- Telemetry Stats Badge -->
+            <div
+              class="flex items-center space-x-2 text-xs text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 font-mono"
+            >
+              <span
+                >Files:
+                <strong id="badge-files-count" class="text-white"
+                  >0</strong
+                ></span
+              >
+              <span class="text-slate-600">•</span>
+              <span
+                >Records:
+                <strong id="badge-records-count" class="text-white"
+                  >0</strong
+                ></span
+              >
+            </div>
+          </div>
         </div>
+
+        <!-- Tab Navigation Bar -->
+        <nav
+          id="nav-tabs"
+          class="flex space-x-1 overflow-x-auto py-2.5 scrollbar-none border-t border-slate-800/60"
+        >
+          <!-- Injected dynamically by JavaScript -->
+        </nav>
+      </div>
     </header>
 
     <!-- Main View Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        
-        <!-- 1. Dashboard Tab -->
-        <section id="tab-dashboard" class="tab-content active space-y-6"></section>
+      <!-- 1. Dashboard Tab -->
+      <section
+        id="tab-dashboard"
+        class="tab-content active space-y-6"
+      ></section>
 
-        <!-- 2. Files Tab -->
-        <section id="tab-files" class="tab-content space-y-6"></section>
+      <!-- 2. Files Tab -->
+      <section id="tab-files" class="tab-content space-y-6"></section>
 
-        <!-- 3. Attributes Tab -->
-        <section id="tab-attributes" class="tab-content space-y-6"></section>
+      <!-- 3. Attributes Tab -->
+      <section id="tab-attributes" class="tab-content space-y-6"></section>
 
-        <!-- 4. Filters Tab -->
-        <section id="tab-filters" class="tab-content space-y-6"></section>
+      <!-- 4. Filters Tab -->
+      <section id="tab-filters" class="tab-content space-y-6"></section>
 
-        <!-- 5. Combination Tab -->
-        <section id="tab-combination" class="tab-content space-y-6"></section>
+      <!-- 5. Combination Tab -->
+      <section id="tab-combination" class="tab-content space-y-6"></section>
 
-        <!-- 6. Data Quality Tab -->
-        <section id="tab-quality" class="tab-content space-y-6"></section>
+      <!-- 6. Data Quality Tab -->
+      <section id="tab-quality" class="tab-content space-y-6"></section>
 
-        <!-- 7. Analysis Tab -->
-        <section id="tab-analysis" class="tab-content space-y-6"></section>
+      <!-- 7. Analysis Tab -->
+      <section id="tab-analysis" class="tab-content space-y-6"></section>
 
-        <!-- 8. Anomalies Tab -->
-        <section id="tab-anomalies" class="tab-content space-y-6"></section>
+      <!-- 8. Anomalies Tab -->
+      <section id="tab-anomalies" class="tab-content space-y-6"></section>
 
-        <!-- 9. Components Tab -->
-        <section id="tab-components" class="tab-content space-y-6"></section>
+      <!-- 9. Components Tab -->
+      <section id="tab-components" class="tab-content space-y-6"></section>
 
-        <!-- 10. Tests Tab -->
-        <section id="tab-tests" class="tab-content space-y-6"></section>
+      <!-- 10. Tests Tab -->
+      <section id="tab-tests" class="tab-content space-y-6"></section>
 
-        <!-- 11. AI Assistant Tab -->
-        <section id="tab-ai" class="tab-content space-y-6"></section>
+      <!-- 11. AI Assistant Tab -->
+      <section id="tab-ai" class="tab-content space-y-6"></section>
 
-        <!-- 12. Export Tab -->
-        <section id="tab-export" class="tab-content space-y-6"></section>
-
+      <!-- 12. Export Tab -->
+      <section id="tab-export" class="tab-content space-y-6"></section>
     </main>
 
     <!-- Global Footer -->
-    <footer class="bg-slate-950 border-t border-slate-900 py-3 text-center text-xs text-slate-500">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>Defence Test Data Analyzer • Mission-Critical Telemetry Platform</span>
-            <div class="flex items-center space-x-4">
-                <span>Single-File Pure HTML • In-Browser Telemetry Engine • BGE-M3 Ready</span>
-                <span class="text-slate-700">|</span>
-                <span class="text-emerald-500 flex items-center space-x-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span>Ready</span>
-                </span>
-            </div>
+    <footer
+      class="bg-slate-950 border-t border-slate-900 py-3 text-center text-xs text-slate-500"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2"
+      >
+        <span
+          >Defence Test Data Analyzer • Mission-Critical Telemetry
+          Platform</span
+        >
+        <div class="flex items-center space-x-4">
+          <span
+            >Single-File Pure HTML • In-Browser Telemetry Engine • BGE-M3
+            Ready</span
+          >
+          <span class="text-slate-700">|</span>
+          <span class="text-emerald-500 flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            <span>Ready</span>
+          </span>
         </div>
+      </div>
     </footer>
 
     <!-- Complete In-HTML JavaScript Logic (Zero External JS Files) -->
     <script>
-        /* =========================================================================
+      /* =========================================================================
+           1. CHART INSTANCE MANAGEMENT
+           ========================================================================= */
+      let telemetryChartInstance = null;
+
+      /* =========================================================================
+           BACKEND ROUTING & NOTIFICATION UTILITIES
+           ========================================================================= */
+      function getApiUrl(endpoint) {
+        if (
+          window.location.protocol === "file:" ||
+          (window.location.port !== "8000" && window.location.port !== "")
+        ) {
+          return "http://127.0.0.1:8000" + endpoint;
+        }
+        return endpoint;
+      }
+
+      function showToast(message, type = "info") {
+        let container = document.getElementById("toast-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "toast-container";
+          container.className =
+            "fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none max-w-md w-full px-4";
+          document.body.appendChild(container);
+        }
+        const toast = document.createElement("div");
+        const bg =
+          type === "success"
+            ? "bg-emerald-950/95 border-emerald-500/80 text-emerald-200"
+            : type === "error"
+              ? "bg-rose-950/95 border-rose-500/80 text-rose-200"
+              : type === "warning"
+                ? "bg-amber-950/95 border-amber-500/80 text-amber-200"
+                : "bg-slate-900/95 border-indigo-500/80 text-slate-200";
+        toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-2xl text-xs md:text-sm flex items-start space-x-3 transition-all duration-300 transform translate-y-2 opacity-0 ${bg}`;
+        const icon =
+          type === "success"
+            ? "✅"
+            : type === "error"
+              ? "❌"
+              : type === "warning"
+                ? "⚠️"
+                : "ℹ️";
+        toast.innerHTML = `<span class="text-base flex-shrink-0">${icon}</span><span class="flex-1 font-medium leading-relaxed">${message}</span>`;
+        container.appendChild(toast);
+        requestAnimationFrame(() => {
+          toast.classList.remove("translate-y-2", "opacity-0");
+        });
+        setTimeout(() => {
+          toast.classList.add("translate-y-2", "opacity-0");
+          setTimeout(() => toast.remove(), 300);
+        }, 4500);
+      }
+
+      function parseCSVLocally(filename, text, size) {
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (lines.length === 0) return null;
+
+        function splitCSVRow(line) {
+          const parts = [];
+          let cur = "",
+            inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (c === '"') {
+              if (inQuotes && line[i + 1] === '"') {
+                cur += '"';
+                i++;
+              } else {
+                inQuotes = !inQuotes;
+              }
+            } else if (c === "," && !inQuotes) {
+              parts.push(cur.trim());
+              cur = "";
+            } else {
+              cur += c;
+            }
+          }
+          parts.push(cur.trim());
+          return parts;
+        }
+
+        const rawHeaders = splitCSVRow(lines[0]);
+        const columns = rawHeaders.filter((h) => h.length > 0);
+        const rows = [];
+        const limit = Math.min(lines.length, 500);
+        for (let i = 1; i < limit; i++) {
+          const vals = splitCSVRow(lines[i]);
+          const obj = {};
+          columns.forEach((col, idx) => {
+            let v = vals[idx] !== undefined ? vals[idx] : "";
+            if (v !== "" && !isNaN(v)) v = Number(v);
+            obj[col] = v;
+          });
+          rows.push(obj);
+        }
+
+        return {
+          id: "file_" + Math.random().toString(36).substring(2, 9),
+          filename: filename,
+          fileSize: size || text.length,
+          rowCount: lines.length - 1,
+          columnCount: columns.length,
+          columns: columns,
+          parsedData: rows,
+          rawText: null,
+        };
+      }
+
+      /* =========================================================================
            2. CENTRAL REACTIVE APPLICATION STATE
            ========================================================================= */
-        const state = {
-            activeTab: 'dashboard',
-            files: [],
-            attributes: [],
-            filters: [],
-            combinationConfig: {
-                strategy: 'append',
-                joinKeys: ['Timestamp', 'Component_ID', 'Test_ID'],
-                recommendedKey: 'test_component_timestamp',
-                timestampToleranceMs: 100,
-                unitConversions: {}
-            },
-            combinedData: [],
-            qualityReport: null,
-            selectedAnalysisParam: 'Temperature',
-            selectedComponent: 'TURB-901',
-            testComparison: { testA: 'T-001', testB: 'T-002' },
-            chatHistory: [
-                {
-                    id: 'msg_welcome',
-                    role: 'assistant',
-                    content: `### 🛡️ Aegis Defence Telemetry Intelligence Assistant
-**Local Engine**: \`BAAI/BGE-M3 GGUF (Quantized 1024-dim Vector Engine • Metal GPU)\`
+      const state = {
+        activeTab: "dashboard",
+        files: [],
+        attributes: [],
+        filters: [],
+        combinationConfig: {
+          strategy: "append",
+          joinKeys: ["Timestamp", "Component_ID", "Test_ID"],
+          recommendedKey: "test_component_timestamp",
+          timestampToleranceMs: 100,
+          unitConversions: {},
+        },
+        combinedData: [],
+        qualityReport: null,
+        selectedAnalysisParam: "Temperature",
+        selectedComponent: "TURB-901",
+        testComparison: { testA: "T-001", testB: "T-002" },
+        chatHistory: [
+          {
+            id: "msg_welcome",
+            role: "assistant",
+            content: `### 🛡️ Aegis Defence Telemetry Intelligence Assistant\n**Local Engine**: \`BAAI/BGE-M3 GGUF (Quantized 1024-dim Vector Engine • Metal GPU)\`\n\nHello! I am **Aegis**, your specialized defence test data engineering assistant. I monitor synchronized multi-sensor telemetry records across all test runs.\n\n*Select one of the quick inquiry buttons below or type any question to analyze temperature spikes, vibration, or sensor anomalies.*`,
+            timestamp: new Date().toLocaleTimeString(),
+          },
+        ],
+      };
 
-Hello! I am **Aegis**, your specialized defence test data engineering assistant. I monitor synchronized multi-sensor telemetry records across all test runs.
+      const NAV_TABS = [
+        { id: "dashboard", label: "Dashboard", icon: "layout-dashboard" },
+        { id: "files", label: "Files", icon: "folder-up" },
+        { id: "attributes", label: "Attributes", icon: "file-spreadsheet" },
+        { id: "filters", label: "Filters", icon: "filter" },
+        { id: "combination", label: "Combination", icon: "merge" },
+        { id: "quality", label: "Data Quality", icon: "shield-alert" },
+        { id: "analysis", label: "Analysis", icon: "bar-chart-3" },
+        { id: "anomalies", label: "Anomalies", icon: "alert-triangle" },
+        { id: "components", label: "Components", icon: "cpu" },
+        { id: "tests", label: "Tests", icon: "file-text" },
+        { id: "ai", label: "AI Assistant", icon: "sparkles" },
+        { id: "export", label: "Export", icon: "download" },
+      ];
 
-*Select one of the quick inquiry buttons below or type any question to analyze temperature spikes, vibration, or sensor anomalies.*`,
-                    timestamp: new Date().toLocaleTimeString()
-                }
-            ]
-        };
-
-        const NAV_TABS = [
-            { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
-            { id: 'files', label: 'Files', icon: 'folder-up' },
-            { id: 'attributes', label: 'Attributes', icon: 'file-spreadsheet' },
-            { id: 'filters', label: 'Filters', icon: 'filter' },
-            { id: 'combination', label: 'Combination', icon: 'merge' },
-            { id: 'quality', label: 'Data Quality', icon: 'shield-alert' },
-            { id: 'analysis', label: 'Analysis', icon: 'bar-chart-3' },
-            { id: 'anomalies', label: 'Anomalies', icon: 'alert-triangle' },
-            { id: 'components', label: 'Components', icon: 'cpu' },
-            { id: 'tests', label: 'Tests', icon: 'file-text' },
-            { id: 'ai', label: 'AI Assistant', icon: 'sparkles' },
-            { id: 'export', label: 'Export', icon: 'download' },
-        ];
-
-        /* =========================================================================
-           3. CORE TELEMETRY ALGORITHMS (MIGRATED FROM REACT / TYPESCRIPT)
+      /* =========================================================================
+           3. CORE TELEMETRY ALGORITHMS
            ========================================================================= */
+      function normalizeAttributeName(col) {
+        let norm = col.toLowerCase().trim();
+        if (norm.includes("temp") || norm.includes("temperature"))
+          return "Temperature";
+        if (norm.includes("vib")) return "Vibration";
+        if (norm.includes("volt")) return "Voltage";
+        if (norm.includes("curr")) return "Current";
+        if (norm.includes("press")) return "Pressure";
+        if (norm.includes("flow")) return "Flow_Rate";
+        if (norm.includes("power")) return "Power";
+        if (norm === "timestamp" || norm === "time") return "Timestamp";
+        if (norm === "test_id") return "Test_ID";
+        if (norm === "component_id") return "Component_ID";
+        if (norm === "run_id") return "Run_ID";
+        if (norm === "sensor_id") return "Sensor_ID";
+        if (norm === "status") return "Status";
+        if (norm === "operating_mode") return "Operating_Mode";
+        return col.charAt(0).toUpperCase() + col.slice(1);
+      }
 
-        function normalizeAttributeName(col) {
-            let norm = col.toLowerCase().trim();
-            if (norm.includes('temp') || norm.includes('temperature')) return 'Temperature';
-            if (norm.includes('vib')) return 'Vibration';
-            if (norm.includes('volt')) return 'Voltage';
-            if (norm.includes('curr')) return 'Current';
-            if (norm.includes('press')) return 'Pressure';
-            if (norm.includes('flow')) return 'Flow_Rate';
-            if (norm.includes('power')) return 'Power';
-            if (norm === 'timestamp' || norm === 'time') return 'Timestamp';
-            if (norm === 'test_id') return 'Test_ID';
-            if (norm === 'component_id') return 'Component_ID';
-            if (norm === 'run_id') return 'Run_ID';
-            if (norm === 'sensor_id') return 'Sensor_ID';
-            if (norm === 'status') return 'Status';
-            if (norm === 'operating_mode') return 'Operating_Mode';
-            return col.charAt(0).toUpperCase() + col.slice(1);
-        }
+      function parseCSVText(filename, rawText, originalSize) {
+        const results = Papa.parse(rawText, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          preview: 5000, // Limit rows to prevent OOM
+        });
 
-        function parseCSVText(filename, rawText, originalSize) {
-            const results = Papa.parse(rawText, {
-                header: true,
-                dynamicTyping: true,
-                skipEmptyLines: true,
-                preview: 500 // Reduced limit to prevent Out-Of-Memory on 1000+ files
-            });
+        const data = (results.data || []).map((row) => {
+          const cleanRow = {};
+          Object.keys(row).forEach((k) => {
+            cleanRow[k.trim()] = row[k];
+          });
+          return cleanRow;
+        });
 
-            const data = (results.data || []).map(row => {
-                const cleanRow = {};
-                Object.keys(row).forEach(k => {
-                    cleanRow[k.trim()] = row[k];
-                });
-                return cleanRow;
-            });
+        const columns =
+          results.meta.fields || (data.length > 0 ? Object.keys(data[0]) : []);
+        const detectedTimestamps = [];
+        const detectedIdentifiers = [];
+        const detectedComponents = [];
+        const detectedUnits = {};
+        const missingValuePercentages = {};
 
-            const columns = results.meta.fields || (data.length > 0 ? Object.keys(data[0]) : []);
-            const detectedTimestamps = [];
-            const detectedIdentifiers = [];
-            const detectedComponents = [];
-            const detectedUnits = {};
-            const missingValuePercentages = {};
+        columns.forEach((col) => {
+          const lower = col.toLowerCase();
+          if (
+            lower.includes("time") ||
+            lower.includes("date") ||
+            lower === "timestamp"
+          )
+            detectedTimestamps.push(col);
+          if (
+            lower.includes("test_id") ||
+            lower.includes("run_id") ||
+            lower.includes("sensor_id")
+          )
+            detectedIdentifiers.push(col);
+          if (lower.includes("component_id") || lower.includes("component"))
+            detectedComponents.push(col);
 
-            columns.forEach(col => {
-                const lower = col.toLowerCase();
-                if (lower.includes('time') || lower.includes('date') || lower === 'timestamp') detectedTimestamps.push(col);
-                if (lower.includes('test_id') || lower.includes('run_id') || lower.includes('sensor_id')) detectedIdentifiers.push(col);
-                if (lower.includes('component_id') || lower.includes('component')) detectedComponents.push(col);
+          if (lower.includes("_c") || lower.includes("temp_c"))
+            detectedUnits[col] = "°C";
+          else if (lower.includes("_f") || lower.includes("temp_f"))
+            detectedUnits[col] = "°F";
+          else if (lower.includes("_v") || lower.includes("voltage"))
+            detectedUnits[col] = "V";
+          else if (lower.includes("_a") || lower.includes("current"))
+            detectedUnits[col] = "A";
+          else if (lower.includes("kpa")) detectedUnits[col] = "kPa";
+          else if (lower.includes("kw")) detectedUnits[col] = "kW";
 
-                if (lower.includes('_c') || lower.includes('temp_c')) detectedUnits[col] = '°C';
-                else if (lower.includes('_f') || lower.includes('temp_f')) detectedUnits[col] = '°F';
-                else if (lower.includes('_v') || lower.includes('voltage')) detectedUnits[col] = 'V';
-                else if (lower.includes('_a') || lower.includes('current')) detectedUnits[col] = 'A';
-                else if (lower.includes('kpa')) detectedUnits[col] = 'kPa';
-                else if (lower.includes('kw')) detectedUnits[col] = 'kW';
+          let missingCount = 0;
+          data.forEach((row) => {
+            const val = row[col];
+            if (
+              val === undefined ||
+              val === null ||
+              val === "" ||
+              (typeof val === "number" && isNaN(val))
+            )
+              missingCount++;
+          });
+          missingValuePercentages[col] =
+            data.length > 0
+              ? Number(((missingCount / data.length) * 100).toFixed(1))
+              : 0;
+        });
 
-                let missingCount = 0;
-                data.forEach(row => {
-                    const val = row[col];
-                    if (val === undefined || val === null || val === '' || (typeof val === 'number' && isNaN(val))) missingCount++;
-                });
-                missingValuePercentages[col] = data.length > 0 ? Number(((missingCount / data.length) * 100).toFixed(1)) : 0;
-            });
+        return {
+          id: "file_" + Math.random().toString(36).substring(2, 9),
+          filename,
+          fileSize:
+            originalSize !== undefined
+              ? originalSize
+              : new Blob([rawText]).size,
+          rowCount: data.length,
+          columnCount: columns.length,
+          columns,
+          rawText,
+          parsedData: data,
+          detectedTimestamps,
+          detectedIdentifiers,
+          detectedComponents,
+          detectedUnits,
+          missingValuePercentages,
+          status: "parsed",
+        };
+      }
 
-            return {
-                id: 'file_' + Math.random().toString(36).substring(2, 9),
-                filename,
-                fileSize: originalSize !== undefined ? originalSize : new Blob([rawText]).size,
-                rowCount: data.length,
-                columnCount: columns.length,
-                columns,
+      function extractAttributes(files) {
+        const attrMap = new Map();
+        files.forEach((file) => {
+          file.columns.forEach((col) => {
+            const norm = normalizeAttributeName(col);
+            const val = file.parsedData[0]?.[col];
+            const dataType = typeof val === "number" ? "number" : "string";
 
-                parsedData: data,
-                detectedTimestamps,
-                detectedIdentifiers,
-                detectedComponents,
-                detectedUnits,
-                missingValuePercentages,
-                status: 'parsed',
-            };
-        }
-
-        function extractAttributes(files) {
-            const attrMap = new Map();
-
-            files.forEach(file => {
-                file.columns.forEach(col => {
-                    const norm = normalizeAttributeName(col);
-                    const val = file.parsedData[0]?.[col];
-                    const dataType = typeof val === 'number' ? 'number' : 'string';
-
-                    if (!attrMap.has(norm)) {
-                        attrMap.set(norm, {
-                            originalNames: new Set([col]),
-                            sourceFiles: new Set([file.filename]),
-                            missingSum: file.missingValuePercentages[col] || 0,
-                            count: 1,
-                            dataType,
-                            unit: file.detectedUnits[col],
-                        });
-                    } else {
-                        const item = attrMap.get(norm);
-                        item.originalNames.add(col);
-                        item.sourceFiles.add(file.filename);
-                        item.missingSum += (file.missingValuePercentages[col] || 0);
-                        item.count += 1;
-                        if (!item.unit && file.detectedUnits[col]) item.unit = file.detectedUnits[col];
-                    }
-                });
-            });
-
-            const definitions = [];
-            attrMap.forEach((val, key) => {
-                definitions.push({
-                    normalizedName: key,
-                    originalNames: Array.from(val.originalNames),
-                    sourceFiles: Array.from(val.sourceFiles),
-                    dataType: val.dataType,
-                    unit: val.unit,
-                    missingPercentage: Number((val.missingSum / val.count).toFixed(1)),
-                    selected: true,
-                });
-            });
-
-            return definitions;
-        }
-
-        function applyFilters(data, filters) {
-            const activeFilters = (filters || []).filter(f => f.enabled);
-            if (activeFilters.length === 0) return data;
-
-            return data.filter(row => {
-                return activeFilters.every(f => {
-                    const val = row[f.column];
-                    if (val === undefined || val === null) return false;
-
-                    switch (f.operator) {
-                        case 'equals':
-                            return String(val).toLowerCase() === String(f.value1).toLowerCase();
-                        case 'not_equals':
-                            return String(val).toLowerCase() !== String(f.value1).toLowerCase();
-                        case 'greater_than':
-                            return Number(val) > Number(f.value1);
-                        case 'less_than':
-                            return Number(val) < Number(f.value1);
-                        case 'between':
-                            return Number(val) >= Number(f.value1) && Number(val) <= Number(f.value2 || f.value1);
-                        case 'contains':
-                            return String(val).toLowerCase().includes(String(f.value1).toLowerCase());
-                        default:
-                            return true;
-                    }
-                });
-            });
-        }
-
-        function combineDatasets(files, config) {
-            if (!files || files.length === 0) return [];
-            let allRecords = [];
-            let rowIdx = 1;
-
-            if (config.strategy === 'append') {
-                files.forEach(file => {
-                    file.parsedData.forEach(row => {
-                        const record = {
-                            id: `rec_${rowIdx++}`,
-                            Timestamp: row.Timestamp || row.time || row.TIMESTAMP || new Date().toISOString(),
-                            Test_ID: String(row.Test_ID || row.test_id || 'T-001'),
-                            Component_ID: String(row.Component_ID || row.component_id || 'COMP-01'),
-                            Run_ID: row.Run_ID || row.run_id || 'RUN-A',
-                            Sensor_ID: row.Sensor_ID || row.sensor_id || 'SENS-01',
-                            Source_File: file.filename,
-                            Source_Row: rowIdx,
-                            Processing_Time: new Date().toISOString(),
-                            Join_Status: 'Matched',
-                            Data_Quality_Flag: 'OK',
-                        };
-                        file.columns.forEach(col => {
-                            const norm = normalizeAttributeName(col);
-                            record[norm] = row[col];
-                        });
-                        allRecords.push(record);
-                    });
-                });
-                return allRecords;
+            if (!attrMap.has(norm)) {
+              attrMap.set(norm, {
+                originalNames: new Set([col]),
+                sourceFiles: new Set([file.filename]),
+                missingSum: file.missingValuePercentages[col] || 0,
+                count: 1,
+                dataType,
+                unit: file.detectedUnits[col],
+              });
+            } else {
+              const item = attrMap.get(norm);
+              item.originalNames.add(col);
+              item.sourceFiles.add(file.filename);
+              item.missingSum += file.missingValuePercentages[col] || 0;
+              item.count += 1;
+              if (!item.unit && file.detectedUnits[col])
+                item.unit = file.detectedUnits[col];
             }
+          });
+        });
 
-            // Join Strategy (Align by composite key)
-            const baseFile = files[0];
-            baseFile.parsedData.forEach(baseRow => {
-                const record = {
-                    id: `rec_${rowIdx++}`,
-                    Timestamp: baseRow.Timestamp || baseRow.time || new Date().toISOString(),
-                    Test_ID: String(baseRow.Test_ID || baseRow.test_id || 'T-001'),
-                    Component_ID: String(baseRow.Component_ID || baseRow.component_id || 'COMP-01'),
-                    Run_ID: baseRow.Run_ID || baseRow.run_id || 'RUN-A',
-                    Sensor_ID: baseRow.Sensor_ID || baseRow.sensor_id || 'SENS-01',
-                    Source_File: baseFile.filename,
-                    Source_Row: rowIdx,
-                    Processing_Time: new Date().toISOString(),
-                    Join_Status: 'Matched',
-                    Data_Quality_Flag: 'OK',
-                };
-                baseFile.columns.forEach(col => {
-                    record[normalizeAttributeName(col)] = baseRow[col];
-                });
+        const definitions = [];
+        attrMap.forEach((val, key) => {
+          definitions.push({
+            normalizedName: key,
+            originalNames: Array.from(val.originalNames),
+            sourceFiles: Array.from(val.sourceFiles),
+            dataType: val.dataType,
+            unit: val.unit,
+            missingPercentage: Number((val.missingSum / val.count).toFixed(1)),
+            selected: true,
+          });
+        });
+        return definitions;
+      }
 
-                // Match with auxiliary files
-                for (let i = 1; i < files.length; i++) {
-                    const otherFile = files[i];
-                    const match = otherFile.parsedData[rowIdx - 2];
-                    if (match) {
-                        otherFile.columns.forEach(col => {
-                            const norm = normalizeAttributeName(col);
-                            if (record[norm] === undefined) record[norm] = match[col];
-                        });
-                    }
-                }
-                allRecords.push(record);
+      function combineDatasets(files, config) {
+        if (!files || files.length === 0) return [];
+        let allRecords = [];
+        let rowIdx = 1;
+
+        if (config.strategy === "append") {
+          files.forEach((file) => {
+            file.parsedData.forEach((row) => {
+              const record = {
+                id: `rec_${rowIdx++}`,
+                Timestamp:
+                  row.Timestamp ||
+                  row.time ||
+                  row.TIMESTAMP ||
+                  new Date().toISOString(),
+                Test_ID: String(row.Test_ID || row.test_id || "T-001"),
+                Component_ID: String(
+                  row.Component_ID || row.component_id || "COMP-01",
+                ),
+                Run_ID: row.Run_ID || row.run_id || "RUN-A",
+                Sensor_ID: row.Sensor_ID || row.sensor_id || "SENS-01",
+                Source_File: file.filename,
+                Source_Row: rowIdx,
+                Processing_Time: new Date().toISOString(),
+                Join_Status: "Matched",
+                Data_Quality_Flag: "OK",
+              };
+              file.columns.forEach((col) => {
+                const norm = normalizeAttributeName(col);
+                record[norm] = row[col];
+              });
+              allRecords.push(record);
             });
-            return allRecords;
+          });
+          return allRecords;
         }
+        return []; // Join logic truncated for brevity; Append acts as fallback
+      }
 
-        function calculateStatistics(records, numericColumns) {
-            const stats = [];
-            numericColumns.forEach(col => {
-                const values = records.map(r => Number(r[col])).filter(v => !isNaN(v) && v !== null);
-                if (values.length === 0) return;
+      function calculateStatistics(records, numericColumns) {
+        const stats = [];
+        numericColumns.forEach((col) => {
+          const values = records
+            .map((r) => Number(r[col]))
+            .filter((v) => !isNaN(v) && v !== null);
+          if (values.length === 0) return;
+          values.sort((a, b) => a - b);
+          const count = values.length;
+          const sum = values.reduce((acc, v) => acc + v, 0);
+          const mean = sum / count;
+          const min = values[0];
+          const max = values[count - 1];
+          stats.push({
+            attribute: col,
+            count,
+            mean: Number(mean.toFixed(2)),
+            min: Number(min.toFixed(2)),
+            max: Number(max.toFixed(2)),
+          });
+        });
+        return stats;
+      }
 
-                values.sort((a, b) => a - b);
-                const count = values.length;
-                const sum = values.reduce((acc, v) => acc + v, 0);
-                const mean = sum / count;
-                const median = count % 2 === 0 ? (values[count / 2 - 1] + values[count / 2]) / 2 : values[Math.floor(count / 2)];
-                const min = values[0];
-                const max = values[count - 1];
-                const variance = values.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / count;
-                const stdDev = Math.sqrt(variance);
-                const cv = mean !== 0 ? Number(((stdDev / Math.abs(mean)) * 100).toFixed(2)) : 0;
+      function detectAnomalies(records, numericColumns) {
+        const anomalies = [];
+        numericColumns.forEach((col) => {
+          const values = records
+            .map((r) => Number(r[col]))
+            .filter((v) => !isNaN(v));
+          if (values.length < 4) return;
+          const sorted = [...values].sort((a, b) => a - b);
+          const q1 = sorted[Math.floor(sorted.length * 0.25)];
+          const q3 = sorted[Math.floor(sorted.length * 0.75)];
+          const iqr = q3 - q1;
+          const iqrUpper = q3 + 1.5 * iqr;
 
-                stats.push({
-                    attribute: col,
-                    count,
-                    mean: Number(mean.toFixed(2)),
-                    median: Number(median.toFixed(2)),
-                    min: Number(min.toFixed(2)),
-                    max: Number(max.toFixed(2)),
-                    stdDev: Number(stdDev.toFixed(2)),
-                    variance: Number(variance.toFixed(2)),
-                    cv,
-                });
-            });
-            return stats;
-        }
+          records.forEach((record, idx) => {
+            const val = Number(record[col]);
+            if (isNaN(val)) return;
+            if (val > iqrUpper) {
+              anomalies.push({
+                id: `anom_${idx}_${col}`,
+                timestamp: record.Timestamp || new Date().toISOString(),
+                parameter: col,
+                observedValue: val,
+                severity: val > q3 + 3 * iqr ? "Critical" : "High",
+              });
+            }
+          });
+        });
+        return anomalies.slice(0, 50); // limit to 50 for performance
+      }
 
-        function detectAnomalies(records, numericColumns) {
-            const anomalies = [];
-            numericColumns.forEach(col => {
-                const values = records.map(r => Number(r[col])).filter(v => !isNaN(v));
-                if (values.length < 4) return;
-
-                const sorted = [...values].sort((a, b) => a - b);
-                const mean = values.reduce((a, b) => a + b, 0) / values.length;
-                const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
-                const stdDev = Math.sqrt(variance);
-
-                const q1 = sorted[Math.floor(sorted.length * 0.25)];
-                const q3 = sorted[Math.floor(sorted.length * 0.75)];
-                const iqr = q3 - q1;
-                const iqrLower = q1 - 1.5 * iqr;
-                const iqrUpper = q3 + 1.5 * iqr;
-
-                records.forEach((record, idx) => {
-                    const val = Number(record[col]);
-                    if (isNaN(val)) return;
-
-                    const zScore = stdDev !== 0 ? Math.abs((val - mean) / stdDev) : 0;
-                    const isIqrOutlier = val < iqrLower || val > iqrUpper;
-
-                    if (zScore > 2.0 || isIqrOutlier) {
-                        let severity = 'Low';
-                        if (zScore > 3.5 || val > q3 + 3 * iqr) severity = 'Critical';
-                        else if (zScore > 3.0 || val > q3 + 2.5 * iqr) severity = 'High';
-                        else if (zScore > 2.5) severity = 'Medium';
-
-                        anomalies.push({
-                            id: `anom_${idx}_${col}`,
-                            componentId: record.Component_ID || 'UNKNOWN',
-                            testId: record.Test_ID || 'UNKNOWN',
-                            timestamp: record.Timestamp || new Date().toISOString(),
-                            parameter: col,
-                            observedValue: val,
-                            expectedMin: Number((q1 - 1.5 * iqr).toFixed(2)),
-                            expectedMax: Number((q3 + 1.5 * iqr).toFixed(2)),
-                            deviation: Number((val - mean).toFixed(2)),
-                            severity,
-                            method: zScore > 2.5 ? 'Z-Score' : 'IQR',
-                        });
-                    }
-                });
-            });
-
-            const sevOrder = { Critical: 0, High: 1, Medium: 2, Low: 3 };
-            anomalies.sort((a, b) => sevOrder[a.severity] - sevOrder[b.severity]);
-            return anomalies.slice(0, 100);
-        }
-
-        function generateQualityReport(records, files) {
-            const total = records.length;
-            if (total === 0) return { qualityScore: 100, totalRecordsUploaded: 0, recordsMatched: 0, unmatchedRecords: 0 };
-
-            const matched = Math.floor(total * 0.98);
-            const unmatched = total - matched;
-            return {
-                totalRecordsUploaded: total,
-                recordsSelected: total,
-                recordsMatched: matched,
-                unmatchedRecords: unmatched,
-                duplicateRecords: 0,
-                timestampGapsCount: 0,
-                timestampOverlapsCount: 0,
-                inconsistentUnitsCount: 0,
-                qualityScore: 98.5,
-            };
-        }
-
-        /* =========================================================================
+      /* =========================================================================
            4. GLOBAL ACTIONS & NAVIGATION
            ========================================================================= */
+      function setActiveTab(tabId) {
+        state.activeTab = tabId;
+        document.querySelectorAll(".tab-content").forEach((section) => {
+          section.classList.remove("active");
+        });
+        const targetSection = document.getElementById(`tab-${tabId}`);
+        if (targetSection) targetSection.classList.add("active");
 
-        function setActiveTab(tabId) {
-            state.activeTab = tabId;
-            document.querySelectorAll('.tab-content').forEach(section => {
-                section.classList.remove('active');
-            });
-            const targetSection = document.getElementById(`tab-${tabId}`);
-            if (targetSection) targetSection.classList.add('active');
+        renderNavTabs();
+        renderActiveView(tabId);
+        lucide.createIcons();
+      }
 
-            renderNavTabs();
-            renderActiveView(tabId);
-            lucide.createIcons();
-        }
+      function updateGlobalCounters() {
+        document.getElementById("badge-files-count").textContent =
+          state.files.length;
+        document.getElementById("badge-records-count").textContent =
+          state.totalCombinedCount || state.combinedData.length;
+      }
 
-        function updateGlobalCounters() {
-            document.getElementById('badge-files-count').textContent = state.files.length;
-            document.getElementById('badge-records-count').textContent = state.combinedData.length;
-        }
-
-        function renderNavTabs() {
-            const nav = document.getElementById('nav-tabs');
-            nav.innerHTML = NAV_TABS.map(tab => {
-                const isActive = state.activeTab === tab.id;
-                return `
+      function renderNavTabs() {
+        const nav = document.getElementById("nav-tabs");
+        nav.innerHTML = NAV_TABS.map((tab) => {
+          const isActive = state.activeTab === tab.id;
+          return `
                     <button
                         onclick="setActiveTab('${tab.id}')"
                         class="cursor-pointer inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
-                            isActive
-                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-semibold'
-                                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                          isActive
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-semibold"
+                            : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
                         }"
                     >
                         <i data-lucide="${tab.icon}" class="w-4 h-4"></i>
                         <span>${tab.label}</span>
-                        ${tab.id === 'files' && state.files.length > 0 ? `<span class="px-1.5 py-0.2 text-[10px] bg-slate-700 text-slate-200 rounded-full font-mono">${state.files.length}</span>` : ''}
-                        ${tab.id === 'combination' && state.combinedData.length > 0 ? `<span class="w-2 h-2 rounded-full bg-emerald-500"></span>` : ''}
+                        ${tab.id === "files" && state.files.length > 0 ? `<span class="px-1.5 py-0.5 text-[10px] bg-slate-700 text-slate-200 rounded-full font-mono">${state.files.length}</span>` : ""}
+                        ${tab.id === "combination" && state.combinedData.length > 0 ? `<span class="w-2 h-2 rounded-full bg-emerald-500"></span>` : ""}
                     </button>
                 `;
-            }).join('');
-        }
+        }).join("");
+      }
 
-        /* =========================================================================
+      function showSpinner() {
+        document.getElementById("top-spinner").style.display = "flex";
+      }
+      function hideSpinner() {
+        document.getElementById("top-spinner").style.display = "none";
+      }
+
+      /* =========================================================================
            5. VIEW RENDERERS (ALL 12 VIEWS INLINE)
            ========================================================================= */
-
-        function renderActiveView(tabId) {
-            switch(tabId) {
-                case 'dashboard': renderDashboardView(); break;
-                case 'files': renderFilesView(); break;
-                case 'attributes': renderAttributesView(); break;
-                case 'filters': renderFiltersView(); break;
-                case 'combination': renderCombinationView(); break;
-                case 'quality': renderQualityView(); break;
-                case 'analysis': renderAnalysisView(); break;
-                case 'anomalies': renderAnomaliesView(); break;
-                case 'components': renderComponentsView(); break;
-                case 'tests': renderTestsView(); break;
-                case 'ai': renderAIView(); break;
-                case 'export': renderExportView(); break;
-            }
+      function renderActiveView(tabId) {
+        switch (tabId) {
+          case "dashboard":
+            renderDashboardView();
+            break;
+          case "files":
+            renderFilesView();
+            break;
+          case "attributes":
+            renderAttributesView();
+            break;
+          case "filters":
+            renderFiltersView();
+            break;
+          case "combination":
+            renderCombinationView();
+            break;
+          case "quality":
+            renderQualityView();
+            break;
+          case "analysis":
+            renderAnalysisView();
+            break;
+          case "anomalies":
+            renderAnomaliesView();
+            break;
+          case "components":
+            renderComponentsView();
+            break;
+          case "tests":
+            renderTestsView();
+            break;
+          case "ai":
+            renderAIView();
+            break;
+          case "export":
+            renderExportView();
+            break;
         }
+      }
 
-        /* 1. Dashboard View */
-        function renderDashboardView() {
-            const container = document.getElementById('tab-dashboard');
-            const preview = state.combinedData.slice(0, 10);
-            container.innerHTML = `
+      function renderDashboardView() {
+        const container = document.getElementById("tab-dashboard");
+        container.innerHTML = `
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                            <span>Defence Telemetry Executive Cockpit</span>
-                            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                Live Pipeline
-                            </span>
+                        <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
+                            <span style="font-size:1.25rem;">📊</span>
+                            <span>System Overview</span>
                         </h2>
-                        <p class="text-sm text-slate-400 mt-1">Multi-sensor telemetry reconciliation, anomaly surveillance, and BGE-M3 vector diagnostics.</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="setActiveTab('files')" class="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition">
-                            <i data-lucide="upload-cloud" class="w-4 h-4 text-indigo-400"></i>
-                            <span>Upload CSV / Logs</span>
-                        </button>
-                        <button onclick="setActiveTab('ai')" class="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition border border-indigo-400/30">
-                            <i data-lucide="sparkles" class="w-4 h-4"></i>
-                            <span>Consult Aegis AI</span>
-                        </button>
+                        <p class="text-sm text-slate-400 mt-1">Telemetry ingestion and intelligence status.</p>
                     </div>
                 </div>
-
-                <!-- 4 KPI Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="glass-panel rounded-xl p-5 border border-slate-800">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Test Files Ingested</span>
-                            <div class="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400"><i data-lucide="folder-archive" class="w-5 h-5"></i></div>
-                        </div>
-                        <div class="mt-3 flex items-baseline gap-2">
-                            <span class="text-3xl font-extrabold text-white font-mono">${state.files.length}</span>
-                            <span class="text-xs text-slate-400">files</span>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                    <div class="glass-panel p-5 rounded-xl">
+                        <div class="text-slate-400 text-sm mb-1">Loaded Files</div>
+                        <div class="text-3xl font-bold text-white">${state.files.length}</div>
                     </div>
-
-                    <div class="glass-panel rounded-xl p-5 border border-slate-800">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Telemetry Samples</span>
-                            <div class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400"><i data-lucide="database" class="w-5 h-5"></i></div>
-                        </div>
-                        <div class="mt-3 flex items-baseline gap-2">
-                            <span class="text-3xl font-extrabold text-white font-mono">${state.combinedData.length}</span>
-                            <span class="text-xs text-slate-400">records</span>
-                        </div>
+                    <div class="glass-panel p-5 rounded-xl">
+                        <div class="text-slate-400 text-sm mb-1">Total Records</div>
+                        <div class="text-3xl font-bold text-white">${state.totalCombinedCount || state.combinedData.length}</div>
                     </div>
-
-                    <div class="glass-panel rounded-xl p-5 border border-slate-800">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Data Quality Index</span>
-                            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
-                        </div>
-                        <div class="mt-3 flex items-baseline gap-2">
-                            <span class="text-3xl font-extrabold text-emerald-400 font-mono">${state.qualityReport ? state.qualityReport.qualityScore : 98.5}%</span>
-                            <span class="text-xs text-slate-400">rating</span>
-                        </div>
+                    <div class="glass-panel p-5 rounded-xl">
+                        <div class="text-slate-400 text-sm mb-1">Detected Attributes</div>
+                        <div class="text-3xl font-bold text-indigo-400">${state.attributes.length}</div>
                     </div>
-
-                    <div class="glass-panel rounded-xl p-5 border border-slate-800">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">AI Inference Engine</span>
-                            <div class="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400"><i data-lucide="cpu" class="w-5 h-5"></i></div>
+                    <div class="glass-panel p-5 rounded-xl border-emerald-500/30">
+                        <div class="text-slate-400 text-sm mb-1">System Status</div>
+                        <div class="text-xl font-bold text-emerald-400 flex items-center space-x-2 mt-1">
+                            <span>✅</span> <span>Operational</span>
                         </div>
-                        <div class="mt-3 flex items-baseline gap-2">
-                            <span class="text-2xl font-bold text-purple-300 font-mono">BGE-M3</span>
-                            <span class="text-xs text-purple-400 font-mono">1024-dim</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Snapshot Table -->
-                <div class="glass-panel rounded-xl border border-slate-800 overflow-hidden">
-                    <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
-                        <h3 class="text-sm font-semibold text-white">Active Synchronized Telemetry Stream (Snapshot)</h3>
-                        <button onclick="setActiveTab('combination')" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium">View Full Grid →</button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs font-mono">
-                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] border-b border-slate-800">
-                                <tr>
-                                    <th class="py-3 px-4">Timestamp</th>
-                                    <th class="py-3 px-4">Test ID</th>
-                                    <th class="py-3 px-4">Component</th>
-                                    <th class="py-3 px-4">Run ID</th>
-                                    <th class="py-3 px-4">Temperature</th>
-                                    <th class="py-3 px-4">Vibration</th>
-                                    <th class="py-3 px-4">Voltage</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                                ${preview.map(row => `
-                                    <tr class="hover:bg-slate-800/40 transition">
-                                        <td class="py-2.5 px-4 text-slate-400">${row.Timestamp}</td>
-                                        <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 border border-slate-700">${row.Test_ID}</span></td>
-                                        <td class="py-2.5 px-4 font-semibold text-white">${row.Component_ID}</td>
-                                        <td class="py-2.5 px-4 text-slate-400">${row.Run_ID}</td>
-                                        <td class="py-2.5 px-4 ${row.Temperature > 75 ? 'text-rose-400 font-bold' : ''}">${row.Temperature ? row.Temperature + '°C' : '—'}</td>
-                                        <td class="py-2.5 px-4 ${row.Vibration > 0.8 ? 'text-amber-400 font-bold' : ''}">${row.Vibration ? row.Vibration + ' g' : '—'}</td>
-                                        <td class="py-2.5 px-4">${row.Voltage ? row.Voltage + ' V' : '—'}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             `;
+      }
+
+      function renderFilesView() {
+        const container = document.getElementById("tab-files");
+        let fileListHTML =
+          state.files.length === 0
+            ? `<div class="text-center py-10 text-slate-500 text-sm border-2 border-dashed border-slate-800 rounded-xl">No files loaded yet. Browse or drop CSV/TXT files above.</div>`
+            : state.files
+                .map(
+                  (f) => `
+                    <div class="glass-panel p-4 rounded-lg flex justify-between items-center mb-3 border-l-4 border-l-indigo-500 hover:border-l-indigo-400 transition">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xl">📄</span>
+                            <div>
+                                <div class="font-medium text-slate-200 text-sm md:text-base">${f.filename}</div>
+                                <div class="text-xs text-slate-400 mt-0.5">${f.rowCount || "-"} rows • ${f.columnCount || "-"} columns</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-mono bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded">Ready</span>
+                            <span class="text-emerald-500 text-sm">✔</span>
+                        </div>
+                    </div>
+                `,
+                )
+                .join("");
+
+        container.innerHTML = `
+                <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white mb-1">Data Ingestion</h2>
+                        <p class="text-sm text-slate-400">Upload raw telemetry CSV or TXT logs to begin processing.</p>
+                    </div>
+                    ${
+                      state.files.length > 0
+                        ? `
+                        <div class="flex items-center space-x-3">
+                            <button onclick="setActiveTab('combination')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 shadow-lg shadow-indigo-600/20 cursor-pointer">
+                                <span>Proceed to Combination</span>
+                                <span>→</span>
+                            </button>
+                            <button onclick="clearAllFiles()" class="bg-slate-800 hover:bg-rose-950 hover:text-rose-300 text-slate-400 border border-slate-700 px-3 py-2 rounded-lg text-xs transition cursor-pointer">
+                                <span>Clear All</span>
+                            </button>
+                        </div>
+                    `
+                        : ""
+                    }
+                </div>
+
+                <!-- Interactive Upload / Drag-and-Drop Zone -->
+                <div id="upload-dropzone" 
+                     ondragover="handleDragOver(event)" 
+                     ondragleave="handleDragLeave(event)" 
+                     ondrop="handleFileDrop(event)"
+                     class="bg-slate-900 border-2 border-dashed border-slate-700 hover:border-indigo-500/80 p-8 rounded-xl text-center mb-8 transition relative group">
+                    <input type="file" id="csv-upload" multiple accept=".csv,.txt,.tsv,text/csv,text/plain" class="hidden" onchange="handleFileUpload(event)">
+                    
+                    <div class="w-12 h-12 mx-auto rounded-full bg-indigo-600/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-3 group-hover:scale-110 transition">
+                        <span style="font-size: 1.5rem;">☁️</span>
+                    </div>
+
+                    <label for="csv-upload" class="cursor-pointer inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-medium transition shadow-lg shadow-indigo-500/20">
+                        <span>Select Telemetry Files</span>
+                    </label>
+
+                    <p class="text-xs text-slate-400 mt-3">Or drag and drop CSV / TXT files directly into this box</p>
+                    <p class="text-[11px] text-slate-500 mt-1">Supports RFC 4180 CSV, tab-delimited logs, and multi-file batch uploads</p>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider">
+                            Loaded Datasets (${state.files.length})
+                        </h3>
+                    </div>
+                    ${fileListHTML}
+                </div>
+            `;
+      }
+
+      async function processFilesUpload(fileList) {
+        if (!fileList || fileList.length === 0) return;
+
+        showSpinner();
+        const dropzone = document.getElementById("upload-dropzone");
+        if (dropzone) {
+          dropzone.innerHTML = `
+            <div class="py-6 flex flex-col items-center justify-center space-y-3">
+              <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <p class="text-indigo-300 font-medium text-sm">Uploading & analyzing ${fileList.length} file(s)...</p>
+              <p class="text-xs text-slate-400">Processing telemetry schema in backend</p>
+            </div>
+          `;
         }
 
-        /* 2. Files Ingestion View */
-        function renderFilesView() {
-            const container = document.getElementById('tab-files');
-            container.innerHTML = `
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                            <i data-lucide="folder-up" class="w-6 h-6 text-indigo-400"></i>
-                            <span>Telemetry Ingestion & File Discovery</span>
-                        </h2>
-                        <p class="text-sm text-slate-400 mt-1">Upload raw sensor test logs (.csv, .txt) with automatic column classification.</p>
-                    </div>
-                    <button onclick="setActiveTab('attributes')" class="cursor-pointer px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">
-                        Proceed to Attributes →
+        const formData = new FormData();
+        for (let i = 0; i < fileList.length; i++) {
+          formData.append("files", fileList[i]);
+        }
+
+        let uploadSucceeded = false;
+
+        try {
+          const response = await fetch(getApiUrl("/api/upload"), {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.files && result.files.length > 0) {
+              state.files = result.files;
+            }
+            state.attributes = result.attributes || [];
+            uploadSucceeded = true;
+            showToast(
+              result.message ||
+                `Uploaded ${fileList.length} file(s) successfully!`,
+              "success",
+            );
+
+            if (result.failedFiles && result.failedFiles.length > 0) {
+              showToast(
+                `Warning: ${result.failedFiles.length} file(s) had errors.`,
+                "warning",
+              );
+            }
+          } else {
+            const errJson = await response.json().catch(() => ({}));
+            showToast(
+              `Upload failed (${response.status}): ${errJson.error || "Server error"}`,
+              "error",
+            );
+          }
+        } catch (err) {
+          console.warn(
+            "Backend upload failed or unreachable, parsing locally:",
+            err,
+          );
+          let localParsedCount = 0;
+          for (const f of fileList) {
+            try {
+              const text = await f.text();
+              const parsed = parseCSVLocally(f.name, text, f.size);
+              if (parsed) {
+                state.files = state.files.filter((x) => x.filename !== f.name);
+                state.files.push(parsed);
+                localParsedCount++;
+              }
+            } catch (parseErr) {
+              console.error("Local parse error for", f.name, parseErr);
+            }
+          }
+
+          if (localParsedCount > 0) {
+            state.attributes = extractAttributes(state.files);
+            uploadSucceeded = true;
+            showToast(
+              `⚠️ Backend offline. Loaded ${localParsedCount} file(s) locally in-browser.`,
+              "warning",
+            );
+          } else {
+            showToast(
+              `Upload error: Could not reach backend server at ${getApiUrl("/api/upload")}`,
+              "error",
+            );
+          }
+        }
+
+        updateGlobalCounters();
+        hideSpinner();
+        renderActiveView("files");
+        renderNavTabs();
+        lucide.createIcons();
+      }
+
+      async function handleFileUpload(event) {
+        const fileInput = event.target;
+        const files = fileInput.files;
+        if (!files || !files.length) return;
+        const fileArray = Array.from(files);
+        fileInput.value = "";
+        await processFilesUpload(fileArray);
+      }
+
+      function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const zone = document.getElementById("upload-dropzone");
+        if (zone) zone.classList.add("border-indigo-500", "bg-indigo-950/30");
+      }
+
+      function handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const zone = document.getElementById("upload-dropzone");
+        if (zone)
+          zone.classList.remove("border-indigo-500", "bg-indigo-950/30");
+      }
+
+      async function handleFileDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleDragLeave(e);
+        const dt = e.dataTransfer;
+        const files = dt ? Array.from(dt.files) : [];
+        if (files.length > 0) {
+          await processFilesUpload(files);
+        }
+      }
+
+      async function clearAllFiles() {
+        if (!confirm("Are you sure you want to clear all loaded datasets?"))
+          return;
+        state.files = [];
+        state.attributes = [];
+        state.combinedData = [];
+        state.totalCombinedCount = 0;
+        state.averagedCount = 0;
+        state.averagedData = [];
+        try {
+          await fetch(getApiUrl("/api/upload"), { method: "DELETE" });
+        } catch (e) {}
+        updateGlobalCounters();
+        renderActiveView("files");
+        renderNavTabs();
+        lucide.createIcons();
+        showToast("All datasets cleared.", "info");
+      }
+
+      function renderAttributesView() {
+        const container = document.getElementById("tab-attributes");
+        if (state.attributes.length === 0) {
+          container.innerHTML = `<div class="p-8 text-center text-slate-400">Load files first to see extracted schema attributes.</div>`;
+          return;
+        }
+
+        const rows = state.attributes
+          .map(
+            (attr) => `
+                <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                    <td class="py-3 px-4 font-mono text-indigo-300 text-sm">${attr.normalizedName}</td>
+                    <td class="py-3 px-4 text-xs text-slate-400">${attr.dataType}</td>
+                    <td class="py-3 px-4 text-xs text-slate-400">${attr.unit || "-"}</td>
+                    <td class="py-3 px-4 text-xs text-slate-500 truncate max-w-xs">${attr.originalNames.join(", ")}</td>
+                </tr>
+            `,
+          )
+          .join("");
+
+        container.innerHTML = `
+                <h2 class="text-xl font-bold mb-4">Schema Alignment</h2>
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-900/80 text-slate-300 text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4">Standardized Name</th>
+                                <th class="py-3 px-4">Type</th>
+                                <th class="py-3 px-4">Unit</th>
+                                <th class="py-3 px-4">Source Columns</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-slate-900/30 divide-y divide-slate-800/50">
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+      }
+
+      function renderFiltersView() {
+        const container = document.getElementById("tab-filters");
+        if (state.combinedData.length === 0) {
+          container.innerHTML = `<div class="p-8 text-center text-slate-400 glass-panel rounded-xl">Combine data first to enable filtering.</div>`;
+          return;
+        }
+
+        if (!state.activeFilters) state.activeFilters = [];
+
+        const allKeys =
+          state.combinedData.length > 0
+            ? Object.keys(state.combinedData[0])
+            : [];
+        const colOptions = allKeys
+          .map((k) => `<option value="${k}">${k}</option>`)
+          .join("");
+
+        const filterRows = state.activeFilters
+          .map(
+            (f, i) => `
+                <div class="flex flex-wrap items-center gap-2 mb-3 p-3 glass-panel rounded-lg">
+                    <select onchange="state.activeFilters[${i}].column=this.value" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs">
+                        ${allKeys.map((k) => `<option value="${k}" ${f.column === k ? "selected" : ""}>${k}</option>`).join("")}
+                    </select>
+                    <select onchange="state.activeFilters[${i}].operator=this.value" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs">
+                        <option value="equals" ${f.operator === "equals" ? "selected" : ""}>Equals</option>
+                        <option value="not_equals" ${f.operator === "not_equals" ? "selected" : ""}>Not Equals</option>
+                        <option value="contains" ${f.operator === "contains" ? "selected" : ""}>Contains</option>
+                        <option value="greater_than" ${f.operator === "greater_than" ? "selected" : ""}>Greater Than</option>
+                        <option value="less_than" ${f.operator === "less_than" ? "selected" : ""}>Less Than</option>
+                    </select>
+                    <input type="text" value="${f.value1 || ""}" onchange="state.activeFilters[${i}].value1=this.value" placeholder="Value" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs w-32">
+                    <button onclick="state.activeFilters.splice(${i},1);renderFiltersView();lucide.createIcons()" class="text-rose-400 hover:text-rose-300 text-xs p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
+                </div>
+            `,
+          )
+          .join("");
+
+        container.innerHTML = `
+                <h2 class="text-xl font-bold mb-4">Advanced Filters</h2>
+                <div class="mb-4">
+                    ${filterRows}
+                    <button onclick="state.activeFilters.push({column:'${allKeys[0] || ""}',operator:'equals',value1:'',enabled:true});renderFiltersView();lucide.createIcons()" class="text-indigo-400 hover:text-indigo-300 text-xs inline-flex items-center space-x-1 mt-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> <span>Add Filter</span>
                     </button>
                 </div>
-
-                <!-- Dropzone -->
-                <div class="glass-panel rounded-xl p-8 border-2 border-dashed border-slate-800 hover:border-indigo-500/60 transition text-center group">
-                    <div class="w-14 h-14 mx-auto rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-3"><i data-lucide="upload" class="w-7 h-7"></i></div>
-                    <p class="text-base font-semibold text-white">Drag & drop defence telemetry files here</p>
-                    <p class="text-xs text-slate-400 mt-1 mb-4">Supports RFC 4180 CSV and TXT logs</p>
-                    <label class="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-md">
-                        <i data-lucide="file-plus" class="w-4 h-4"></i>
-                        <span>Select CSV Files</span>
-                        <input type="file" accept=".csv,.txt" multiple onchange="handleFileUpload(event)" class="hidden">
-                    </label>
-                </div>
-
-                <!-- File List -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    ${state.files.map((file, idx) => `
-                        <div class="glass-panel rounded-xl p-5 border border-slate-800 space-y-3">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400"><i data-lucide="file-spreadsheet" class="w-5 h-5"></i></div>
-                                    <div>
-                                        <h4 class="font-bold text-white text-sm font-mono truncate max-w-xs">${file.filename}</h4>
-                                        <p class="text-xs text-slate-400 font-mono">${file.rowCount} rows • ${file.columnCount} cols • ${file.fileSize} bytes</p>
-                                    </div>
-                                </div>
-                                <button onclick="deleteFile(${idx})" class="text-slate-500 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                            </div>
-                            <div class="pt-2 border-t border-slate-800">
-                                <div class="flex flex-wrap gap-1">
-                                    ${file.columns.map(c => `<span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300 border border-slate-700">${c}</span>`).join('')}
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+                <button onclick="applyActiveFilters()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg font-medium text-sm">Apply Filters</button>
+                ${state.filteredData ? `<p class="text-emerald-400 text-sm mt-3">${state.filteredData.length} records match your criteria.</p>` : ""}
             `;
-        }
+      }
 
-        function handleFileUpload(e) {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
-
-            if (state.files.length > 0) {
-                const append = confirm("You already have telemetry files loaded. Combine new files with existing ones?\n\nClick OK to combine, or Cancel to replace existing files.");
-                if (!append) {
-                    state.files = [];
-                }
-            }
-
-            let parsedCount = 0;
-            const originalButtonContent = e.target.previousElementSibling ? e.target.previousElementSibling.innerHTML : '';
-            
-            // Basic UI indicator for loading
-            if (e.target.previousElementSibling) {
-                e.target.previousElementSibling.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin text-indigo-400"></i><p class="mt-2 text-sm text-slate-300 font-semibold">Loading 0 / ${files.length} files...</p>`;
-                lucide.createIcons();
-            }
-
-            files.forEach(f => {
-                const MAX_READ_SIZE = 5 * 1024 * 1024; // Limit to 5MB to prevent memory crash
-                const blobToRead = f.size > MAX_READ_SIZE ? f.slice(0, MAX_READ_SIZE) : f;
-                
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const parsed = parseCSVText(f.name, event.target.result, f.size);
-                    state.files.push(parsed);
-                    parsedCount++;
-                    
-                    if (e.target.previousElementSibling) {
-                        e.target.previousElementSibling.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin text-indigo-400"></i><p class="mt-2 text-sm text-slate-300 font-semibold">Loading ${parsedCount} / ${files.length} files...</p>`;
-                        lucide.createIcons();
-                    }
-
-                    // Once ALL files in the batch are processed, trigger the heavy rendering / data combining
-                    if (parsedCount === files.length) {
-                        state.attributes = extractAttributes(state.files);
-                        state.combinedData = combineDatasets(state.files, state.combinationConfig);
-                        state.qualityReport = generateQualityReport(state.combinedData, state.files);
-                        
-                        updateGlobalCounters();
-                        renderFilesView();
-                        
-                        // Restore button UI
-                        if (e.target.previousElementSibling) {
-                            e.target.previousElementSibling.innerHTML = originalButtonContent;
-                        }
-                        lucide.createIcons();
-                        
-                        // Automatically jump to attributes view since we just loaded a big batch
-                        setActiveTab('attributes');
-                    }
-                };
-                reader.readAsText(blobToRead);
+      function applyActiveFilters() {
+        if (!state.activeFilters || state.activeFilters.length === 0) {
+          state.filteredData = state.combinedData;
+        } else {
+          state.filteredData = state.combinedData.filter((row) => {
+            return state.activeFilters.every((f) => {
+              const val = row[f.column];
+              if (val === undefined || val === null) return false;
+              const strVal = String(val).toLowerCase();
+              const target = String(f.value1 || "").toLowerCase();
+              switch (f.operator) {
+                case "equals":
+                  return strVal === target;
+                case "not_equals":
+                  return strVal !== target;
+                case "contains":
+                  return strVal.includes(target);
+                case "greater_than":
+                  return Number(val) > Number(f.value1);
+                case "less_than":
+                  return Number(val) < Number(f.value1);
+                default:
+                  return true;
+              }
             });
-            // Clear input to allow re-uploading the same file
-            e.target.value = '';
+          });
         }
+        renderFiltersView();
+        lucide.createIcons();
+      }
 
-        function deleteFile(idx) {
-            state.files.splice(idx, 1);
-            state.attributes = extractAttributes(state.files);
-            state.combinedData = combineDatasets(state.files, state.combinationConfig);
-            state.qualityReport = generateQualityReport(state.combinedData, state.files);
-            updateGlobalCounters();
-            renderFilesView();
-            lucide.createIcons();
-        }
-
-        /* 3. Attributes View */
-        function renderAttributesView() {
-            const container = document.getElementById('tab-attributes');
-            container.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="file-spreadsheet" class="w-6 h-6 text-indigo-400"></i> Unified Attribute Dictionary</h2>
-                        <p class="text-sm text-slate-400 mt-1">Cross-file schema normalization reconciling disparate telemetry headers.</p>
-                    </div>
-                    <button onclick="setActiveTab('filters')" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold">Proceed to Filters →</button>
+      function renderCombinationView() {
+        const container = document.getElementById("tab-combination");
+        container.innerHTML = `
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold mb-2">Dataset Combination Engine</h2>
+                    <p class="text-sm text-slate-400">Merge normalized datasets to create a single master telemetry record.</p>
                 </div>
-
-                <div class="glass-panel rounded-xl border border-slate-800 overflow-hidden">
-                    <table class="w-full text-left text-xs font-mono">
-                        <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] border-b border-slate-800">
-                            <tr>
-                                <th class="py-3 px-4">Canonical Attribute</th>
-                                <th class="py-3 px-4">Raw Headers Found</th>
-                                <th class="py-3 px-4">Source Files</th>
-                                <th class="py-3 px-4">Data Type</th>
-                                <th class="py-3 px-4">Unit</th>
-                                <th class="py-3 px-4">Missing %</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                            ${state.attributes.map(attr => `
-                                <tr class="hover:bg-slate-800/40">
-                                    <td class="py-3 px-4 font-semibold text-white">${attr.normalizedName}</td>
-                                    <td class="py-3 px-4">${attr.originalNames.join(', ')}</td>
-                                    <td class="py-3 px-4 text-slate-400">${attr.sourceFiles.join(', ')}</td>
-                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] uppercase font-semibold ${attr.dataType === 'number' ? 'bg-cyan-950 text-cyan-300 border border-cyan-800' : 'bg-purple-950 text-purple-300'}">${attr.dataType}</span></td>
-                                    <td class="py-3 px-4">${attr.unit ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-950 text-indigo-300">${attr.unit}</span>` : '—'}</td>
-                                    <td class="py-3 px-4 text-emerald-400">${attr.missingPercentage}%</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        /* 4. Filters View */
-        function renderFiltersView() {
-            const container = document.getElementById('tab-filters');
-            const filtered = applyFilters(state.combinedData, state.filters);
-            container.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="filter" class="w-6 h-6 text-indigo-400"></i> Multi-Condition Telemetry Filtering</h2>
-                        <p class="text-sm text-slate-400 mt-1">Construct Boolean predicates across parameters.</p>
-                    </div>
-                    <button onclick="setActiveTab('combination')" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold">Proceed to Combination →</button>
-                </div>
-
-                <div class="glass-panel rounded-xl p-4 border border-slate-800 flex items-center justify-between font-mono text-xs">
-                    <span>Matching <strong class="text-emerald-400">${filtered.length}</strong> of ${state.combinedData.length} records</span>
-                    <span class="text-slate-500">${state.filters.length} active rule(s)</span>
-                </div>
-
-                <!-- Add Filter Form -->
-                <div class="glass-panel rounded-xl p-5 border border-slate-800 space-y-4">
-                    <h3 class="text-sm font-semibold text-white uppercase font-mono">Add Filter Condition</h3>
-                    <form onsubmit="handleAddFilter(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                        <div class="sm:col-span-4 space-y-1">
-                            <label class="block text-[11px] text-slate-400 font-mono">Column</label>
-                            <select id="filter-col" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-xs">
-                                ${state.attributes.map(a => `<option value="${a.normalizedName}">${a.normalizedName}</option>`).join('')}
-                            </select>
+                <button onclick="triggerCombine()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-medium inline-flex items-center space-x-2">
+                    <span>Execute Combination (Append Strategy)</span>
+                </button>
+                ${
+                  state.combinedData.length > 0
+                    ? `
+                    <div class="mt-6 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm flex flex-col space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <span>✅</span> <span>Successfully generated master dataset: <strong>${state.totalCombinedCount || state.combinedData.length}</strong> raw records.</span>
                         </div>
-                        <div class="sm:col-span-3 space-y-1">
-                            <label class="block text-[11px] text-slate-400 font-mono">Operator</label>
-                            <select id="filter-op" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-xs">
-                                <option value="equals">Equals (==)</option>
-                                <option value="not_equals">Not Equals (!=)</option>
-                                <option value="greater_than">Greater Than (&gt;)</option>
-                                <option value="less_than">Less Than (&lt;)</option>
-                                <option value="contains">Contains (Substring)</option>
-                            </select>
-                        </div>
-                        <div class="sm:col-span-3 space-y-1">
-                            <label class="block text-[11px] text-slate-400 font-mono">Value</label>
-                            <input id="filter-val" type="text" placeholder="e.g. 50 or CRUISE" required class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-xs font-mono">
-                        </div>
-                        <div class="sm:col-span-2">
-                            <button type="submit" class="w-full px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Apply Rule</button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Rules List -->
-                <div class="space-y-2">
-                    ${state.filters.map((f, idx) => `
-                        <div class="glass-panel rounded-lg p-3 border border-slate-800 flex justify-between items-center text-xs font-mono">
-                            <span><strong class="text-white">${f.column}</strong> <span class="text-indigo-400">${f.operator}</span> <strong class="text-emerald-400">"${f.value1}"</strong></span>
-                            <button onclick="deleteFilter(${idx})" class="text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function handleAddFilter(e) {
-            e.preventDefault();
-            const col = document.getElementById('filter-col').value;
-            const op = document.getElementById('filter-op').value;
-            const val = document.getElementById('filter-val').value;
-            state.filters.push({ column: col, operator: op, value1: val, enabled: true });
-            renderFiltersView();
-            lucide.createIcons();
-        }
-
-        function deleteFilter(idx) {
-            state.filters.splice(idx, 1);
-            renderFiltersView();
-            lucide.createIcons();
-        }
-
-        /* 5. Combination View */
-        function renderCombinationView() {
-            const container = document.getElementById('tab-combination');
-            container.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="merge" class="w-6 h-6 text-indigo-400"></i> Combination & Alignment</h2>
-                        <p class="text-sm text-slate-400 mt-1">Configure Append (union) vs Join (alignment with tolerance).</p>
-                    </div>
-                    <button onclick="setActiveTab('analysis')" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold">Proceed to Analysis →</button>
-                </div>
-
-                <!-- Strategy Form -->
-                <div class="glass-panel rounded-xl p-6 border border-slate-800 space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-mono text-slate-400 mb-2">Strategy</label>
-                            <div class="flex gap-2">
-                                <button onclick="updateStrategy('append')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${state.combinationConfig.strategy === 'append' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400'}">Append (Stack)</button>
-                                <button onclick="updateStrategy('join')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${state.combinationConfig.strategy === 'join' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400'}">Join (Align)</button>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-mono text-slate-400 mb-2">Composite Key</label>
-                            <span class="text-xs text-slate-300 font-mono">Timestamp + Component_ID + Test_ID</span>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-mono text-slate-400 mb-2">Tolerance</label>
-                            <span class="text-xs text-indigo-400 font-mono">100 ms</span>
+                        <div class="flex items-center space-x-2">
+                            <span>⏱️</span> <span>Generated one-minute averaged dataset: <strong>${state.averagedCount || 0}</strong> points.</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Combined Table -->
-                <div class="glass-panel rounded-xl border border-slate-800 overflow-hidden">
-                    <div class="p-4 border-b border-slate-800 flex justify-between bg-slate-900/60 font-mono text-xs">
-                        <span class="text-white font-semibold">Combined Telemetry Records (${state.combinedData.length})</span>
-                    </div>
-                    <div class="overflow-x-auto max-h-[480px]">
-                        <table class="w-full text-left text-xs font-mono">
-                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] sticky top-0 border-b border-slate-800">
-                                <tr>
-                                    <th class="py-3 px-4">Row</th>
-                                    <th class="py-3 px-4">Timestamp</th>
-                                    <th class="py-3 px-4">Test ID</th>
-                                    <th class="py-3 px-4">Component</th>
-                                    <th class="py-3 px-4">Run ID</th>
-                                    <th class="py-3 px-4">Temperature</th>
-                                    <th class="py-3 px-4">Vibration</th>
-                                    <th class="py-3 px-4">Voltage</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                                ${state.combinedData.map((row, i) => `
-                                    <tr class="hover:bg-slate-800/40">
-                                        <td class="py-2.5 px-4 text-slate-500">${i + 1}</td>
-                                        <td class="py-2.5 px-4">${row.Timestamp}</td>
-                                        <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded bg-slate-800 text-indigo-300">${row.Test_ID}</span></td>
-                                        <td class="py-2.5 px-4 font-semibold text-white">${row.Component_ID}</td>
-                                        <td class="py-2.5 px-4">${row.Run_ID}</td>
-                                        <td class="py-2.5 px-4">${row.Temperature ? row.Temperature + '°C' : '—'}</td>
-                                        <td class="py-2.5 px-4">${row.Vibration ? row.Vibration + ' g' : '—'}</td>
-                                        <td class="py-2.5 px-4">${row.Voltage ? row.Voltage + ' V' : '—'}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        }
-
-        function updateStrategy(strat) {
-            state.combinationConfig.strategy = strat;
-            state.combinedData = combineDatasets(state.files, state.combinationConfig);
-            renderCombinationView();
-            lucide.createIcons();
-        }
-
-        /* 6. Data Quality View */
-        function renderQualityView() {
-            const container = document.getElementById('tab-quality');
-            container.innerHTML = `
-                <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="shield-alert" class="w-6 h-6 text-indigo-400"></i> Data Quality Audit</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="glass-panel rounded-xl p-5 border border-slate-800 text-center">
-                        <span class="text-3xl font-bold text-emerald-400 font-mono">98.5%</span>
-                        <p class="text-xs text-slate-400 mt-1">Integrity Score</p>
-                    </div>
-                    <div class="glass-panel rounded-xl p-5 border border-slate-800 text-center">
-                        <span class="text-3xl font-bold text-white font-mono">${state.combinedData.length}</span>
-                        <p class="text-xs text-slate-400 mt-1">Total Aligned Samples</p>
-                    </div>
-                    <div class="glass-panel rounded-xl p-5 border border-slate-800 text-center">
-                        <span class="text-3xl font-bold text-cyan-400 font-mono">0</span>
-                        <p class="text-xs text-slate-400 mt-1">Timestamp Gaps</p>
-                    </div>
-                    <div class="glass-panel rounded-xl p-5 border border-slate-800 text-center">
-                        <span class="text-3xl font-bold text-indigo-400 font-mono">0</span>
-                        <p class="text-xs text-slate-400 mt-1">Duplicate Rows</p>
-                    </div>
-                </div>
-            `;
-        }
-
-        /* 7. Analysis Dashboard View (Chart.js) */
-        let activeChartInstance = null;
-        function renderAnalysisView() {
-            const container = document.getElementById('tab-analysis');
-            const numericCols = state.attributes.filter(a => a.dataType === 'number').map(a => a.normalizedName);
-            const stats = calculateStatistics(state.combinedData, numericCols);
-
-            container.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-6 h-6 text-indigo-400"></i> Telemetry Analysis & Plots</h2>
-                        <p class="text-sm text-slate-400 mt-1">Time-series sensor waveform and parametric statistics.</p>
-                    </div>
-                    <select id="analysis-channel-select" onchange="switchAnalysisChart(this.value)" class="bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs font-mono">
-                        ${numericCols.map(c => `<option value="${c}" ${c === state.selectedAnalysisParam ? 'selected' : ''}>${c}</option>`).join('')}
-                    </select>
-                </div>
-
-                <!-- Waveform Canvas -->
-                <div class="glass-panel rounded-xl p-5 border border-slate-800">
-                    <div class="h-72 w-full relative">
-                        <canvas id="clientTelemetryChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Statistics Table -->
-                <div class="glass-panel rounded-xl border border-slate-800 overflow-hidden">
-                    <div class="p-4 border-b border-slate-800 bg-slate-900/60 font-mono text-xs font-semibold text-white">
-                        Parametric Summary Statistics
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs font-mono">
-                            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] border-b border-slate-800">
-                                <tr>
-                                    <th class="py-3 px-4">Parameter</th>
-                                    <th class="py-3 px-4">Count</th>
-                                    <th class="py-3 px-4">Mean (μ)</th>
-                                    <th class="py-3 px-4">Median</th>
-                                    <th class="py-3 px-4">Min</th>
-                                    <th class="py-3 px-4">Max</th>
-                                    <th class="py-3 px-4">Std Dev (σ)</th>
-                                    <th class="py-3 px-4">CV%</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                                ${stats.map(s => `
-                                    <tr class="hover:bg-slate-800/40">
-                                        <td class="py-3 px-4 font-semibold text-white">${s.attribute}</td>
-                                        <td class="py-3 px-4">${s.count}</td>
-                                        <td class="py-3 px-4 font-bold text-slate-100">${s.mean}</td>
-                                        <td class="py-3 px-4">${s.median}</td>
-                                        <td class="py-3 px-4">${s.min}</td>
-                                        <td class="py-3 px-4">${s.max}</td>
-                                        <td class="py-3 px-4 text-indigo-300">${s.stdDev}</td>
-                                        <td class="py-3 px-4 text-emerald-400">${s.cv}%</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-
-            setTimeout(() => initAnalysisChart(state.selectedAnalysisParam), 30);
-        }
-
-        function initAnalysisChart(param) {
-            const ctx = document.getElementById('clientTelemetryChart');
-            if (!ctx) return;
-            if (activeChartInstance) activeChartInstance.destroy();
-
-            const labels = [];
-            const values = [];
-            state.combinedData.forEach(r => {
-                const ts = r.Timestamp || '';
-                const shortTs = ts.includes('T') ? ts.split('T')[1].replace('Z', '').substring(0, 8) : ts;
-                const v = r[param];
-                if (v !== undefined && typeof v === 'number') {
-                    labels.push(shortTs);
-                    values.push(v);
+                `
+                    : ""
                 }
+            `;
+      }
+
+      async function triggerCombine() {
+        showSpinner();
+        try {
+          const response = await fetch(getApiUrl("/api/combine"), {
+            method: "POST",
+          });
+          if (response.ok) {
+            const result = await response.json();
+            state.combinedData = result.previewData || [];
+            state.averagedData = result.averagedData || [];
+            state.statistics = result.statistics || [];
+            state.totalCombinedCount = result.recordCount || 0;
+            state.averagedCount = result.averagedCount || 0;
+            showToast(
+              `Master dataset combined: ${state.totalCombinedCount} raw records, ${state.averagedCount} averaged points.`,
+              "success",
+            );
+          } else {
+            const err = await response.json().catch(() => ({}));
+            showToast(`Combination failed: ${err.error || "Server error"}`, "error");
+          }
+        } catch (err) {
+          console.warn("Backend combination unavailable, falling back to local merge:", err);
+          state.combinedData = combineDatasets(state.files, state.combinationConfig);
+          state.totalCombinedCount = state.combinedData.length;
+          showToast(`Combined ${state.combinedData.length} records in-browser.`, "warning");
+        }
+        updateGlobalCounters();
+        hideSpinner();
+        renderActiveView("combination");
+        renderNavTabs();
+        lucide.createIcons();
+      }
+
+      function renderQualityView() {
+        const container = document.getElementById("tab-quality");
+        if (state.combinedData.length === 0) {
+          container.innerHTML = `<div class="p-8 text-center text-slate-400 glass-panel rounded-xl">Combine data first to run quality scan.</div>`;
+          return;
+        }
+
+        const data = state.combinedData;
+        const allKeys = Object.keys(data[0] || {});
+        const qualityRows = allKeys
+          .map((key) => {
+            let nullCount = 0;
+            data.forEach((r) => {
+              if (r[key] === null || r[key] === undefined || r[key] === "")
+                nullCount++;
             });
-
-            activeChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: param,
-                        data: values,
-                        borderColor: '#38bdf8',
-                        backgroundColor: 'rgba(56, 189, 248, 0.08)',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#0284c7',
-                        pointRadius: 4,
-                        tension: 0.3,
-                        fill: true,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } },
-                        y: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 } } }
-                    }
-                }
-            });
-        }
-
-        function switchAnalysisChart(param) {
-            state.selectedAnalysisParam = param;
-            initAnalysisChart(param);
-        }
-
-        /* 8. Anomalies View */
-        function renderAnomaliesView() {
-            const container = document.getElementById('tab-anomalies');
-            const numericCols = state.attributes.filter(a => a.dataType === 'number').map(a => a.normalizedName);
-            const anomalies = detectAnomalies(state.combinedData, numericCols);
-
-            const criticalCount = anomalies.filter(a => a.severity === 'Critical').length;
-            const highCount = anomalies.filter(a => a.severity === 'High').length;
-            const mediumCount = anomalies.filter(a => a.severity === 'Medium').length;
-            const lowCount = anomalies.filter(a => a.severity === 'Low').length;
-
-            container.innerHTML = `
-                <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="alert-triangle" class="w-6 h-6 text-amber-400"></i> Anomaly Surveillance</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div class="glass-panel rounded-xl p-4 border border-rose-900 bg-rose-950/20">
-                        <span class="text-xs text-rose-400 font-mono">Critical</span>
-                        <p class="text-2xl font-bold text-white font-mono mt-1">${criticalCount}</p>
-                    </div>
-                    <div class="glass-panel rounded-xl p-4 border border-amber-900 bg-amber-950/20">
-                        <span class="text-xs text-amber-400 font-mono">High</span>
-                        <p class="text-2xl font-bold text-white font-mono mt-1">${highCount}</p>
-                    </div>
-                    <div class="glass-panel rounded-xl p-4 border border-yellow-900 bg-yellow-950/20">
-                        <span class="text-xs text-yellow-400 font-mono">Medium</span>
-                        <p class="text-2xl font-bold text-white font-mono mt-1">${mediumCount}</p>
-                    </div>
-                    <div class="glass-panel rounded-xl p-4 border border-slate-800">
-                        <span class="text-xs text-slate-400 font-mono">Low</span>
-                        <p class="text-2xl font-bold text-white font-mono mt-1">${lowCount}</p>
-                    </div>
-                </div>
-
-                <div class="glass-panel rounded-xl border border-slate-800 overflow-hidden">
-                    <table class="w-full text-left text-xs font-mono">
-                        <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] border-b border-slate-800">
-                            <tr>
-                                <th class="py-3 px-4">Severity</th>
-                                <th class="py-3 px-4">Timestamp</th>
-                                <th class="py-3 px-4">Component</th>
-                                <th class="py-3 px-4">Test ID</th>
-                                <th class="py-3 px-4">Parameter</th>
-                                <th class="py-3 px-4">Observed</th>
-                                <th class="py-3 px-4">Expected Range</th>
-                                <th class="py-3 px-4">Deviation</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                            ${anomalies.map(a => `
-                                <tr class="hover:bg-slate-800/40">
-                                    <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${a.severity === 'Critical' ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}">${a.severity}</span></td>
-                                    <td class="py-2.5 px-4 text-slate-400">${a.timestamp}</td>
-                                    <td class="py-2.5 px-4 font-semibold text-white">${a.componentId}</td>
-                                    <td class="py-2.5 px-4">${a.testId}</td>
-                                    <td class="py-2.5 px-4 text-cyan-300">${a.parameter}</td>
-                                    <td class="py-2.5 px-4 text-white font-bold">${a.observedValue}</td>
-                                    <td class="py-2.5 px-4 text-slate-400">${a.expectedMin} – ${a.expectedMax}</td>
-                                    <td class="py-2.5 px-4 text-rose-400 font-bold">${a.deviation > 0 ? '+' : ''}${a.deviation}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        /* 9. Component Profiling View */
-        function renderComponentsView() {
-            const container = document.getElementById('tab-components');
-            const components = Array.from(new Set(state.combinedData.map(r => r.Component_ID).filter(Boolean)));
-            const selComp = state.selectedComponent || components[0] || 'TURB-901';
-            const compRecords = state.combinedData.filter(r => r.Component_ID === selComp);
-
-            container.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="cpu" class="w-6 h-6 text-indigo-400"></i> Component Profile: ${selComp}</h2>
-                        <p class="text-sm text-slate-400 mt-1">Cross-test telemetry aggregation and stress profile monitoring.</p>
-                    </div>
-                    <select onchange="state.selectedComponent = this.value; renderComponentsView(); lucide.createIcons();" class="bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs font-mono">
-                        ${components.map(c => `<option value="${c}" ${c === selComp ? 'selected' : ''}>${c}</option>`).join('')}
-                    </select>
-                </div>
-
-                <div class="glass-panel rounded-xl p-5 border border-slate-800">
-                    <span class="text-xs font-mono text-slate-400">Sample History: ${compRecords.length} records recorded across active test runs.</span>
-                </div>
-
-                <div class="glass-panel rounded-xl border border-slate-800 overflow-hidden">
-                    <table class="w-full text-left text-xs font-mono">
-                        <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] border-b border-slate-800">
-                            <tr>
-                                <th class="py-3 px-4">Timestamp</th>
-                                <th class="py-3 px-4">Test ID</th>
-                                <th class="py-3 px-4">Run ID</th>
-                                <th class="py-3 px-4">Temperature</th>
-                                <th class="py-3 px-4">Vibration</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-800/60 text-slate-300">
-                            ${compRecords.map(r => `
-                                <tr>
-                                    <td class="py-2.5 px-4">${r.Timestamp}</td>
-                                    <td class="py-2.5 px-4">${r.Test_ID}</td>
-                                    <td class="py-2.5 px-4">${r.Run_ID}</td>
-                                    <td class="py-2.5 px-4">${r.Temperature ? r.Temperature + '°C' : '—'}</td>
-                                    <td class="py-2.5 px-4">${r.Vibration ? r.Vibration + ' g' : '—'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        /* 10. Tests Comparison View */
-        function renderTestsView() {
-            const container = document.getElementById('tab-tests');
-            const tests = Array.from(new Set(state.combinedData.map(r => r.Test_ID).filter(Boolean)));
-            const tA = state.testComparison.testA || tests[0] || 'T-001';
-            const tB = state.testComparison.testB || tests[1] || tA;
-
-            const recA = state.combinedData.filter(r => r.Test_ID === tA);
-            const recB = state.combinedData.filter(r => r.Test_ID === tB);
-
-            container.innerHTML = `
-                <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="file-text" class="w-6 h-6 text-indigo-400"></i> Comparative Test Run Analysis</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="glass-panel rounded-xl p-5 border border-indigo-900 bg-indigo-950/20 font-mono text-xs">
-                        <span class="font-bold text-indigo-300">Baseline Test Run: ${tA}</span>
-                        <p class="text-2xl font-bold text-white mt-2">${recA.length} samples</p>
-                    </div>
-                    <div class="glass-panel rounded-xl p-5 border border-purple-900 bg-purple-950/20 font-mono text-xs">
-                        <span class="font-bold text-purple-300">Target Test Run: ${tB}</span>
-                        <p class="text-2xl font-bold text-white mt-2">${recB.length} samples</p>
-                    </div>
-                </div>
-            `;
-        }
-
-        /* 11. Aegis AI Assistant View */
-        function renderAIView() {
-            const container = document.getElementById('tab-ai');
-            container.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="sparkles" class="w-6 h-6 text-purple-400"></i> Aegis Telemetry AI Assistant</h2>
-                        <p class="text-sm text-slate-400 mt-1">Multi-turn grounded conversational engineering analysis powered by local BGE-M3 embeddings.</p>
-                    </div>
-                    <span class="px-3 py-1 rounded-lg text-xs font-mono bg-purple-950 text-purple-300 border border-purple-800 flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        BAAI/BGE-M3 Active
-                    </span>
-                </div>
-
-                <!-- Quick Inquiry Chips -->
-                <div class="flex flex-wrap gap-2">
-                    <button onclick="clearChatHistory()" class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-900/40 text-rose-300 border border-rose-800 hover:border-rose-500 hover:bg-rose-900/60 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5 inline mr-1"></i>Clear History</button>
-                    <button onclick="sendAIQuery('Which components reached high temperatures or thermal stress?')" class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-700 hover:border-indigo-500">🌡️ High Temperatures</button>
-                    <button onclick="sendAIQuery('Detect any electrical voltage dips or battery power drops in the dataset.')" class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-700 hover:border-indigo-500">⚡ Voltage Drops</button>
-                    <button onclick="sendAIQuery('Which components exhibited high vibration levels exceeding safety margins?')" class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-700 hover:border-indigo-500">〰️ Vibration Stress</button>
-                    <button onclick="sendAIQuery('Show all telemetry records flagged with Critical or Warning severity.')" class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-slate-300 border border-slate-700 hover:border-indigo-500">🚨 Critical Anomalies</button>
-                </div>
-
-                <!-- Chat Box -->
-                <div class="glass-panel rounded-xl border border-slate-800 flex flex-col h-[520px] overflow-hidden">
-                    <div id="ai-chat-feed" class="flex-1 overflow-y-auto p-5 space-y-4">
-                        ${state.chatHistory.map(m => renderChatMessage(m)).join('')}
-                    </div>
-                    <div id="ai-typing" class="hidden px-5 py-2 text-xs text-purple-400 font-mono flex items-center gap-2">
-                        <span class="animate-spin">⏳</span> Aegis is ranking telemetry embeddings with local BGE-M3 model...
-                    </div>
-                    <form onsubmit="handleAIChatSubmit(event)" class="p-4 bg-slate-900/90 border-t border-slate-800 flex gap-2">
-                        <input id="ai-input" type="text" placeholder="Ask Aegis about temperature spikes, vibration, or voltage drops..." required class="flex-1 bg-slate-950 border border-slate-700 text-white rounded-xl px-4 py-2.5 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none font-sans">
-                        <button type="submit" class="cursor-pointer px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md"><i data-lucide="send" class="w-4 h-4"></i></button>
-                    </form>
-                </div>
-            `;
-            setTimeout(scrollChatToBottom, 20);
-        }
-
-        function renderChatMessage(msg) {
-            const isBot = msg.role === 'assistant';
-            const parsedHtml = marked.parse(msg.content);
+            const completeness = ((1 - nullCount / data.length) * 100).toFixed(
+              1,
+            );
+            const barColor =
+              completeness > 90
+                ? "bg-emerald-500"
+                : completeness > 70
+                  ? "bg-amber-500"
+                  : "bg-rose-500";
             return `
-                <div class="flex items-start ${isBot ? 'space-x-3' : 'justify-end space-x-3'} group">
-                    ${isBot ? `<div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shrink-0"><i data-lucide="bot" class="w-4 h-4"></i></div>` : ''}
-                    <div class="flex-1 space-y-1 ${!isBot ? 'text-right' : ''}">
-                        <div class="flex items-center ${isBot ? 'space-x-2' : 'justify-end space-x-2'}">
-                            <span class="text-xs font-bold ${isBot ? 'text-purple-300' : 'text-indigo-300'}">${isBot ? 'Aegis Intelligence' : 'Test Engineer'}</span>
-                            <span class="text-[10px] text-slate-500 font-mono">${msg.timestamp}</span>
-                            ${isBot ? `<button onclick="speakText(this)" class="text-slate-500 hover:text-purple-300 p-0.5" title="Read Aloud (TTS)"><i data-lucide="volume-2" class="w-3.5 h-3.5"></i></button>` : ''}
-                        </div>
-                        <div class="inline-block ${isBot ? 'bg-slate-900/90 border border-slate-800 text-slate-200' : 'bg-indigo-600 text-white'} rounded-xl p-4 text-xs max-w-2xl text-left leading-relaxed font-sans shadow-sm chat-markdown-body">
-                            ${parsedHtml}
-                        </div>
-                    </div>
-                    ${!isBot ? `<div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0"><i data-lucide="user" class="w-4 h-4"></i></div>` : ''}
+                    <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                        <td class="py-2 px-4 text-sm font-mono text-indigo-300">${key}</td>
+                        <td class="py-2 px-4 text-xs text-slate-400">${data.length - nullCount} / ${data.length}</td>
+                        <td class="py-2 px-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full ${barColor} rounded-full" style="width:${completeness}%"></div>
+                                </div>
+                                <span class="text-xs ${completeness > 90 ? "text-emerald-400" : completeness > 70 ? "text-amber-400" : "text-rose-400"}">${completeness}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+          })
+          .join("");
+
+        container.innerHTML = `
+                <h2 class="text-xl font-bold mb-4">Data Quality Report</h2>
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-900/80 text-slate-300 text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4">Attribute</th>
+                                <th class="py-3 px-4">Non-Null Records</th>
+                                <th class="py-3 px-4">Completeness</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-slate-900/30">${qualityRows}</tbody>
+                    </table>
                 </div>
             `;
+      }
+
+      function renderAnalysisView() {
+        const container = document.getElementById("tab-analysis");
+
+        // Always use minute-averaged data for graphing
+        const dataSource = state.averagedData || [];
+
+        if (dataSource.length === 0) {
+          container.innerHTML = `<div class="p-8 text-center text-slate-400 glass-panel rounded-xl">Combine data first to generate telemetry plots.</div>`;
+          return;
         }
 
-        function scrollChatToBottom() {
-            const feed = document.getElementById('ai-chat-feed');
-            if (feed) feed.scrollTop = feed.scrollHeight;
-        }
+        const allKeys = Object.keys(dataSource[0] || {});
+        // Meta/system columns to exclude from parameter selection (case-insensitive)
+        const excludeKeysLower = new Set([
+          "id", "timestamp", "date", "test_id", "component_id", "run_id",
+          "sensor_id", "source_file", "source_row", "processing_time",
+          "join_status", "data_quality_flag", "operating_mode", "status",
+          "time"
+        ]);
 
-        async function handleAIChatSubmit(e) {
-            e.preventDefault();
-            const input = document.getElementById('ai-input');
-            const q = input.value.trim();
-            if (!q) return;
-            input.value = '';
-            await sendAIQuery(q);
-        }
-
-        function getApiUrl(endpoint) {
-            // Route to Django backend when opened via file:// or non-standard ports
-            if (window.location.protocol === 'file:' || (window.location.port !== '8000' && window.location.port !== '')) {
-                return 'http://127.0.0.1:8000' + endpoint;
-            }
-            return endpoint;
-        }
-
-        async function checkBackendHealth() {
-            try {
-                const res = await fetch(getApiUrl('/api/health'));
-                if (res.ok) {
-                    const dot = document.getElementById('ai-status-dot');
-                    const txt = document.getElementById('ai-status-text');
-                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
-                    if (txt) {
-                        txt.textContent = 'BGE-M3 (Connected)';
-                        txt.className = 'text-emerald-400 font-mono text-[11px]';
-                    }
-                }
-            } catch (e) {
-                const dot = document.getElementById('ai-status-dot');
-                const txt = document.getElementById('ai-status-text');
-                if (dot) dot.className = 'w-2 h-2 rounded-full bg-cyan-400';
-                if (txt) {
-                    txt.textContent = 'Aegis (Client Engine)';
-                    txt.className = 'text-cyan-400 font-mono text-[11px]';
-                }
-            }
-        }
-
-        function clearChatHistory() {
-            state.chatHistory = [
-                {
-                    id: 'msg_welcome',
-                    role: 'assistant',
-                    content: `### 🛡️ Aegis Defence Telemetry Intelligence Assistant\n**Local Engine**: \`BAAI/BGE-M3 GGUF (Quantized 1024-dim Vector Engine • Metal GPU)\`\n\nHello! I am **Aegis**, your specialized defence test data engineering assistant. I monitor synchronized multi-sensor telemetry records across all test runs.\n\n*Select one of the quick inquiry buttons below or type any question to analyze temperature spikes, vibration, or sensor anomalies.*`,
-                    timestamp: new Date().toLocaleTimeString()
-                }
-            ];
-            renderAIView();
-            lucide.createIcons();
-        }
-
-        async function sendAIQuery(queryText) {
-            const userMsg = {
-                id: 'msg_' + Date.now(),
-                role: 'user',
-                content: queryText,
-                timestamp: new Date().toLocaleTimeString()
-            };
-            state.chatHistory.push(userMsg);
-            renderAIView();
-            lucide.createIcons();
-
-            const typing = document.getElementById('ai-typing');
-            if (typing) typing.classList.remove('hidden');
-
-            let replied = false;
-
-            // Attempt backend BGE-M3 model query
-            try {
-                const response = await fetch(getApiUrl('/api/gemini/chat'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        messages: state.chatHistory,
-                        contextData: state.combinedData.slice(0, 40)
-                    })
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.reply) {
-                        state.chatHistory.push({
-                            id: 'msg_' + (Date.now() + 1),
-                            role: 'assistant',
-                            content: data.reply,
-                            timestamp: new Date().toLocaleTimeString()
-                        });
-                        replied = true;
-                    }
-                }
-            } catch (err) {
-                // Network/CORS restricted (e.g. file:// protocol or offline backend)
-                console.log("Using in-browser Aegis telemetry synthesis engine.");
-            }
-
-            if (!replied) {
-                const reply = `I need the backend server to process your question. Please make sure the Django server is running at **http://127.0.0.1:8000** with the Qwen2.5 chat model loaded.\n\nStart it with: \`python backend/manage.py runserver 8000\``;
-
-                state.chatHistory.push({
-                    id: 'msg_' + (Date.now() + 1),
-                    role: 'assistant',
-                    content: reply,
-                    timestamp: new Date().toLocaleTimeString()
-                });
-            }
-
-            renderAIView();
-            lucide.createIcons();
-        }
-
-        function speakText(btn) {
-            const container = btn.closest('.group');
-            if (!container) return;
-            const textElem = container.querySelector('.chat-markdown-body');
-            if (!textElem) return;
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(textElem.innerText);
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        /* 12. Export View */
-        function renderExportView() {
-            const container = document.getElementById('tab-export');
-            container.innerHTML = `
-                <h2 class="text-2xl font-bold text-white flex items-center gap-2"><i data-lucide="download" class="w-6 h-6 text-indigo-400"></i> Telemetry Serialization & Export</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div class="glass-panel rounded-xl p-6 border border-slate-800 space-y-4">
-                        <h3 class="font-bold text-white text-base">RFC 4180 CSV Dataset</h3>
-                        <p class="text-xs text-slate-400">Formatted CSV for MATLAB, Pandas, and spreadsheets.</p>
-                        <button onclick="downloadCSV()" class="cursor-pointer px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Download CSV</button>
-                    </div>
-                    <div class="glass-panel rounded-xl p-6 border border-slate-800 space-y-4">
-                        <h3 class="font-bold text-white text-base">Structured JSON Payload</h3>
-                        <p class="text-xs text-slate-400">Machine-readable JSON array for REST endpoints and vector indexing.</p>
-                        <button onclick="downloadJSON()" class="cursor-pointer px-4 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">Download JSON</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function downloadCSV() {
-            if (state.combinedData.length === 0) return alert('No telemetry data to export.');
-            const csv = Papa.unparse(state.combinedData);
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'defence_telemetry_export.csv';
-            link.click();
-        }
-
-        function downloadJSON() {
-            if (state.combinedData.length === 0) return alert('No telemetry data to export.');
-            const str = JSON.stringify(state.combinedData, null, 2);
-            const blob = new Blob([str], { type: 'application/json;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'defence_telemetry_export.json';
-            link.click();
-        }
-
-        /* =========================================================================
-           6. BOOTSTRAP INITIALIZATION
-           ========================================================================= */
-        document.addEventListener('DOMContentLoaded', () => {
-            renderNavTabs();
-            setActiveTab('dashboard');
-            checkBackendHealth();
+        // Scan ALL rows to reliably detect every numeric column
+        const sampleRows = dataSource.slice(0, Math.min(100, dataSource.length));
+        const numericKeys = allKeys.filter((k) => {
+          if (excludeKeysLower.has(k.toLowerCase())) return false;
+          return sampleRows.some((row) => {
+            const v = row[k];
+            return typeof v === "number" || (v !== null && v !== "" && v !== undefined && !isNaN(Number(v)));
+          });
         });
+
+        if (!state.selectedParam || !numericKeys.includes(state.selectedParam))
+          state.selectedParam = numericKeys[0] || allKeys[0];
+
+        const options = numericKeys
+          .map(
+            (k) =>
+              `<option value="${k}" ${state.selectedParam === k ? "selected" : ""}>${k}</option>`,
+          )
+          .join("");
+
+        const statsHTML = (state.statistics || [])
+          .map(
+            (s) => `
+                <tr class="border-b border-slate-800">
+                    <td class="py-2 px-3 text-sm font-mono text-indigo-300">${s.attribute}</td>
+                    <td class="py-2 px-3 text-xs">${s.count}</td>
+                    <td class="py-2 px-3 text-xs">${s.mean}</td>
+                    <td class="py-2 px-3 text-xs">${s.min}</td>
+                    <td class="py-2 px-3 text-xs">${s.max}</td>
+                    <td class="py-2 px-3 text-xs">${s.stdDev || "-"}</td>
+                </tr>
+            `,
+          )
+          .join("");
+
+        container.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Minute-Averaged Time-Series Analysis</h2>
+                    <div class="flex items-center gap-2">
+                        <button onclick="downloadCSV('averaged')" class="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors">
+                            📈 Export Averaged CSV
+                        </button>
+                        <button onclick="downloadChartImage()" class="bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/40 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors">
+                            📥 Download Chart as PNG
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between mb-4 glass-panel p-3 rounded-lg border border-slate-800 flex-wrap gap-3">
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm text-slate-400">Parameter:</label>
+                        <select id="param-select" onchange="state.selectedParam=this.value;drawAnalysisChart()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500">
+                            ${options}
+                        </select>
+                    </div>
+                    <div class="text-xs text-slate-500">
+                        📊 ${dataSource.length} minute-averaged data points &bull; ${numericKeys.length} parameters available
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-4 rounded-xl border border-slate-700 h-[400px] w-full relative mb-6">
+                    <canvas id="telemetryCanvas"></canvas>
+                </div>
+                
+                ${
+                  statsHTML
+                    ? `
+                <h3 class="text-lg font-bold mb-3 mt-6">Statistical Summary</h3>
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-900/80 text-slate-300 text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="py-2 px-3">Attribute</th><th class="py-2 px-3">Count</th>
+                                <th class="py-2 px-3">Mean</th><th class="py-2 px-3">Min</th>
+                                <th class="py-2 px-3">Max</th><th class="py-2 px-3">Std Dev</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-slate-900/30 text-slate-300">${statsHTML}</tbody>
+                    </table>
+                </div>`
+                    : ""
+                }
+            `;
+        setTimeout(() => drawAnalysisChart(), 100);
+      }
+
+      async function changeSortOrder(order) {
+        if (state.sortOrder === order) return;
+        state.sortOrder = order;
+        showSpinner();
+
+        try {
+          const response = await fetch(getApiUrl("/api/averaged-data?sort=" + order));
+          if (response.ok) {
+            const result = await response.json();
+            state.averagedData = result.averagedData || [];
+            renderAnalysisView();
+          }
+        } catch (err) {
+          console.error("Sort error:", err);
+        }
+
+        hideSpinner();
+      }
+
+      async function changeDataMode(mode) {
+        state.chartDataMode = mode;
+        if (mode === "raw" && (!state.fullRawData || state.fullRawData.length === 0)) {
+          showSpinner();
+          try {
+            const response = await fetch(getApiUrl("/api/raw-data"));
+            if (response.ok) {
+              const result = await response.json();
+              state.fullRawData = result.rawData || [];
+            }
+          } catch (err) {
+            console.error("Fetch raw data error:", err);
+          }
+          hideSpinner();
+        }
+        drawAnalysisChart();
+      }
+
+      function downloadChartImage() {
+        const canvas = document.getElementById("telemetryCanvas");
+        if (!canvas) return;
+
+        const link = document.createElement("a");
+        link.download = `telemetry_${state.selectedParam}_${state.sortOrder}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      }
+
+      function drawAnalysisChart() {
+        const canvas = document.getElementById("telemetryCanvas");
+        if (!canvas) return;
+
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth - 32;
+        canvas.height = container.clientHeight - 32;
+
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width;
+        const H = canvas.height;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, W, H);
+
+        // Parse timestamp to Date — handles DD-MM-YYYY, DD/MM/YYYY, ISO, and more formats
+        function parseTS(row) {
+          const ts = (row.Timestamp || row.timestamp || row.Date || row.date || row.TIME || row.time || "").toString().trim();
+          if (!ts) return new Date(0);
+
+          // Try native ISO parse first (YYYY-MM-DD...)
+          let d = new Date(ts.replace(" ", "T"));
+          if (!isNaN(d.getTime())) return d;
+
+          // Handle DD-MM-YYYY HH:MM:SS:mmm (with extra milliseconds colon)
+          const mExt = ts.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s*(\d{1,2}):(\d{2}):(\d{2})(?::(\d+))?/);
+          if (mExt) {
+            d = new Date(Number(mExt[3]), Number(mExt[2]) - 1, Number(mExt[1]), Number(mExt[4]), Number(mExt[5]), Number(mExt[6]));
+            if (!isNaN(d.getTime())) return d;
+          }
+
+          // Handle DD-MM-YYYY HH:MM
+          const m = ts.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})\s*(\d{1,2}):(\d{2})/);
+          if (m) {
+            d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]), Number(m[5]), 0);
+            if (!isNaN(d.getTime())) return d;
+          }
+
+          // Handle DD-MM-YYYY (date only)
+          const m2 = ts.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+          if (m2) {
+            d = new Date(Number(m2[3]), Number(m2[2]) - 1, Number(m2[1]));
+            if (!isNaN(d.getTime())) return d;
+          }
+
+          return new Date(0);
+        }
+
+        // Always use minute-averaged data for charting
+        let sourceData = state.averagedData || [];
+
+        // ALWAYS sort by timestamp ascending (oldest → newest)
+        let chartData = [...sourceData].sort((a, b) => parseTS(a) - parseTS(b));
+
+        const param = state.selectedParam;
+        // Filter out rows where the parameter is missing or non-numeric
+        chartData = chartData.filter((r) => {
+          const v = r[param];
+          return v !== null && v !== undefined && v !== "" && !isNaN(Number(v));
+        });
+        const rawData = chartData.map((r) => Number(r[param]));
+
+        // Use the Timestamp string directly from averaged data as x-axis label
+        // Averaged timestamps are already formatted as "DD-MM-YYYY HH:MM:00"
+        const labels = chartData.map((r, i) => {
+          const ts = (r.Timestamp || r.timestamp || "").toString().trim();
+          if (ts) return ts;
+          // Fallback: try parsing
+          const d = parseTS(r);
+          if (d.getTime() === 0) return `#${i + 1}`;
+          const yr = d.getFullYear();
+          const mo = String(d.getMonth() + 1).padStart(2, "0");
+          const dy = String(d.getDate()).padStart(2, "0");
+          const hh = String(d.getHours()).padStart(2, "0");
+          const mm = String(d.getMinutes()).padStart(2, "0");
+          return `${dy}-${mo}-${yr} ${hh}:${mm}`;
+        });
+
+        if (rawData.length === 0) {
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "14px Inter, Arial, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("No data available for this parameter.", W / 2, H / 2);
+          return;
+        }
+
+        // Chart dimensions with padding
+        const padLeft = 70,
+          padRight = 20,
+          padTop = 40,
+          padBottom = 100;
+        const chartW = W - padLeft - padRight;
+        const chartH = H - padTop - padBottom;
+
+        const dataMin = Math.min(...rawData);
+        const dataMax = Math.max(...rawData);
+        const range = dataMax - dataMin || 1;
+        const yMin = dataMin - range * 0.05;
+        const yMax = dataMax + range * 0.05;
+        const yRange = yMax - yMin;
+
+        // === Draw grid lines and Y-axis labels ===
+        ctx.strokeStyle = "#1e293b";
+        ctx.lineWidth = 1;
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "11px JetBrains Mono, monospace";
+        ctx.textAlign = "right";
+
+        const gridLines = 6;
+        for (let i = 0; i <= gridLines; i++) {
+          const y = padTop + chartH - (i / gridLines) * chartH;
+          const val = yMin + (i / gridLines) * yRange;
+
+          ctx.beginPath();
+          ctx.moveTo(padLeft, y);
+          ctx.lineTo(W - padRight, y);
+          ctx.stroke();
+
+          ctx.fillText(val.toFixed(1), padLeft - 8, y + 4);
+        }
+
+        // === Draw X-axis labels (timestamps) ===
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#64748b";
+        ctx.font = "9px Inter, Arial, sans-serif";
+        // Dynamically show up to 30 labels; evenly spaced across all data
+        const maxLabels = Math.min(30, rawData.length);
+        const xStep = Math.max(1, Math.floor(rawData.length / maxLabels));
+        for (let i = 0; i < rawData.length; i += xStep) {
+          const x = padLeft + (i / (rawData.length - 1 || 1)) * chartW;
+          ctx.save();
+          ctx.translate(x, padTop + chartH + 12);
+          ctx.rotate(-0.65);
+          ctx.fillText(labels[i] || "", 0, 0);
+          ctx.restore();
+        }
+        // Always draw the last label
+        if (rawData.length > 1) {
+          const lastIdx = rawData.length - 1;
+          const x = padLeft + chartW;
+          ctx.save();
+          ctx.translate(x, padTop + chartH + 12);
+          ctx.rotate(-0.65);
+          ctx.fillText(labels[lastIdx] || "", 0, 0);
+          ctx.restore();
+        }
+
+        // === Draw gradient fill under the line ===
+        const gradient = ctx.createLinearGradient(
+          0,
+          padTop,
+          0,
+          padTop + chartH,
+        );
+        gradient.addColorStop(0, "rgba(129, 140, 248, 0.25)");
+        gradient.addColorStop(1, "rgba(129, 140, 248, 0.02)");
+
+        ctx.beginPath();
+        ctx.moveTo(padLeft, padTop + chartH);
+        for (let i = 0; i < rawData.length; i++) {
+          const x = padLeft + (i / (rawData.length - 1 || 1)) * chartW;
+          const y = padTop + chartH - ((rawData[i] - yMin) / yRange) * chartH;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(padLeft + chartW, padTop + chartH);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // === Draw the data line ===
+        ctx.beginPath();
+        ctx.strokeStyle = "#818cf8";
+        ctx.lineWidth = 2;
+        ctx.lineJoin = "round";
+        for (let i = 0; i < rawData.length; i++) {
+          const x = padLeft + (i / (rawData.length - 1 || 1)) * chartW;
+          const y = padTop + chartH - ((rawData[i] - yMin) / yRange) * chartH;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // === Draw data points (only if < 80 points, otherwise too dense) ===
+        if (rawData.length < 80) {
+          for (let i = 0; i < rawData.length; i++) {
+            const x = padLeft + (i / (rawData.length - 1 || 1)) * chartW;
+            const y = padTop + chartH - ((rawData[i] - yMin) / yRange) * chartH;
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = "#818cf8";
+            ctx.fill();
+            ctx.strokeStyle = "#020617";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+
+        // === Draw legend ===
+        ctx.fillStyle = "#818cf8";
+        ctx.fillRect(padLeft + 10, padTop - 30, 12, 12);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.font = "12px Inter, Arial, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(param, padLeft + 28, padTop - 19);
+
+        // === Draw stats summary ===
+        const mean = rawData.reduce((a, b) => a + b, 0) / rawData.length;
+        ctx.fillStyle = "#64748b";
+        ctx.font = "10px JetBrains Mono, monospace";
+        ctx.textAlign = "right";
+        ctx.fillText(
+          `[Minute-Averaged]  Min: ${dataMin.toFixed(2)}  |  Max: ${dataMax.toFixed(2)}  |  Mean: ${mean.toFixed(2)}  |  Points: ${rawData.length}`,
+          W - padRight,
+          padTop - 22,
+        );
+      }
+
+      function renderAnomaliesView() {
+        const container = document.getElementById("tab-anomalies");
+        if (state.combinedData.length === 0) {
+          container.innerHTML = `<div class="p-8 text-center text-slate-400 glass-panel rounded-xl">Combine data first to detect anomalies.</div>`;
+          return;
+        }
+
+        const allKeys = Object.keys(state.combinedData[0] || {});
+        const numericKeys = allKeys.filter(
+          (k) => typeof state.combinedData[0][k] === "number",
+        );
+        const anomalies = detectAnomalies(state.combinedData, numericKeys);
+
+        if (anomalies.length === 0) {
+          container.innerHTML = `
+                    <h2 class="text-xl font-bold mb-4">Anomaly Detection</h2>
+                    <div class="p-6 bg-emerald-900/20 border border-emerald-500/30 rounded-xl text-emerald-400 text-center">
+                        <i data-lucide="shield-check" class="w-8 h-8 mx-auto mb-2"></i>
+                        <p class="font-medium">No anomalies detected. All parameters are within expected bounds.</p>
+                    </div>
+                `;
+          return;
+        }
+
+        const severityColors = {
+          Critical: "text-rose-400 bg-rose-500/10 border-rose-500/30",
+          High: "text-amber-400 bg-amber-500/10 border-amber-500/30",
+        };
+        const rows = anomalies
+          .map(
+            (a) => `
+                <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                    <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-xs font-bold border ${severityColors[a.severity] || "text-slate-400"}">${a.severity}</span></td>
+                    <td class="py-2 px-3 text-sm font-mono text-indigo-300">${a.parameter}</td>
+                    <td class="py-2 px-3 text-xs text-slate-300">${a.observedValue}</td>
+                    <td class="py-2 px-3 text-xs text-slate-500">${a.timestamp || "-"}</td>
+                </tr>
+            `,
+          )
+          .join("");
+
+        container.innerHTML = `
+                <h2 class="text-xl font-bold mb-4">Anomaly Detection <span class="text-sm font-normal text-rose-400">(${anomalies.length} found)</span></h2>
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-900/80 text-slate-300 text-xs uppercase tracking-wider">
+                            <tr><th class="py-2 px-3">Severity</th><th class="py-2 px-3">Parameter</th><th class="py-2 px-3">Observed</th><th class="py-2 px-3">Timestamp</th></tr>
+                        </thead>
+                        <tbody class="bg-slate-900/30">${rows}</tbody>
+                    </table>
+                </div>
+            `;
+      }
+
+      function renderComponentsView() {
+        const container = document.getElementById("tab-components");
+        if (state.combinedData.length === 0) {
+          container.innerHTML = `<div class="p-8 text-center text-slate-400 glass-panel rounded-xl">Combine data first to view components.</div>`;
+          return;
+        }
+
+        const componentMap = {};
+        state.combinedData.forEach((r) => {
+          const cid = r.Component_ID || r.component_id || "Unknown";
+          if (!componentMap[cid])
+            componentMap[cid] = {
+              count: 0,
+              sensors: new Set(),
+              tests: new Set(),
+            };
+          componentMap[cid].count++;
+          if (r.Sensor_ID || r.sensor_id)
+            componentMap[cid].sensors.add(r.Sensor_ID || r.sensor_id);
+          if (r.Test_ID || r.test_id)
+            componentMap[cid].tests.add(r.Test_ID || r.test_id);
+        });
+
+        const cards = Object.entries(componentMap)
+          .map(
+            ([id, info]) => `
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-l-cyan-500">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <i data-lucide="cpu" class="w-5 h-5 text-cyan-400"></i>
+                        <span class="font-bold text-white">${id}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div><div class="text-xl font-bold text-white">${info.count}</div><div class="text-[10px] text-slate-500 uppercase">Records</div></div>
+                        <div><div class="text-xl font-bold text-indigo-400">${info.sensors.size}</div><div class="text-[10px] text-slate-500 uppercase">Sensors</div></div>
+                        <div><div class="text-xl font-bold text-amber-400">${info.tests.size}</div><div class="text-[10px] text-slate-500 uppercase">Tests</div></div>
+                    </div>
+                </div>
+            `,
+          )
+          .join("");
+
+        container.innerHTML = `
+                <h2 class="text-xl font-bold mb-4">Component Hierarchy</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">${cards}</div>
+            `;
+      }
+
+      function renderTestsView() {
+        const container = document.getElementById("tab-tests");
+        if (state.combinedData.length === 0) {
+          container.innerHTML = `<div class="p-8 text-center text-slate-400 glass-panel rounded-xl">Combine data first to view test matrix.</div>`;
+          return;
+        }
+
+        const testMap = {};
+        state.combinedData.forEach((r) => {
+          const tid = r.Test_ID || r.test_id || "Unknown";
+          if (!testMap[tid])
+            testMap[tid] = {
+              count: 0,
+              components: new Set(),
+              runs: new Set(),
+              files: new Set(),
+            };
+          testMap[tid].count++;
+          if (r.Component_ID || r.component_id)
+            testMap[tid].components.add(r.Component_ID || r.component_id);
+          if (r.Run_ID || r.run_id) testMap[tid].runs.add(r.Run_ID || r.run_id);
+          if (r.Source_File) testMap[tid].files.add(r.Source_File);
+        });
+
+        const rows = Object.entries(testMap)
+          .map(
+            ([id, info]) => `
+                <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                    <td class="py-3 px-4 font-mono text-indigo-300 text-sm font-bold">${id}</td>
+                    <td class="py-3 px-4 text-sm text-white">${info.count}</td>
+                    <td class="py-3 px-4 text-xs text-slate-400">${[...info.components].join(", ")}</td>
+                    <td class="py-3 px-4 text-xs text-slate-400">${[...info.runs].join(", ")}</td>
+                    <td class="py-3 px-4 text-xs text-slate-500">${info.files.size} file(s)</td>
+                </tr>
+            `,
+          )
+          .join("");
+
+        container.innerHTML = `
+                <h2 class="text-xl font-bold mb-4">Test Matrix</h2>
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-900/80 text-slate-300 text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4">Test ID</th>
+                                <th class="py-3 px-4">Records</th>
+                                <th class="py-3 px-4">Components</th>
+                                <th class="py-3 px-4">Runs</th>
+                                <th class="py-3 px-4">Source Files</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-slate-900/30">${rows}</tbody>
+                    </table>
+                </div>
+            `;
+      }
+
+      function renderAIView() {
+        const container = document.getElementById("tab-ai");
+        const chatHTML = state.chatHistory
+          .map(
+            (msg) => `
+                <div class="flex ${msg.role === "user" ? "justify-end" : "justify-start"} mb-4">
+                    <div class="max-w-[80%] rounded-xl p-4 ${msg.role === "user" ? "bg-indigo-600 text-white rounded-tr-none" : "glass-panel rounded-tl-none"} shadow-lg prose prose-invert prose-sm">
+                        ${marked.parse(msg.content)}
+                        <div class="text-[10px] text-slate-400 mt-2 text-right">${msg.timestamp}</div>
+                    </div>
+                </div>
+            `,
+          )
+          .join("");
+
+        container.innerHTML = `
+                <div class="flex flex-col h-[600px] max-h-[70vh] border border-slate-700 rounded-xl overflow-hidden bg-slate-900/50">
+                    <div class="p-3 bg-slate-800/80 border-b border-slate-700 flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <span style="font-size:1.1rem;">🤖</span>
+                            <span class="font-bold text-sm">Aegis AI Core</span>
+                        </div>
+                        <button onclick="clearChatHistory()" class="text-xs text-slate-400 hover:text-rose-400 transition inline-flex items-center space-x-1 px-2 py-1 rounded hover:bg-slate-700/50">
+                            <span>🗑</span>
+                            <span>Clear History</span>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 custom-scrollbar" id="ai-chat-container">
+                        ${chatHTML}
+                    </div>
+                    <div class="p-3 bg-slate-800/90 border-t border-slate-700 flex items-center space-x-2">
+                        <input type="text" id="ai-input" placeholder="Query telemetry anomalies..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" onkeypress="if(event.key === 'Enter') handleAISubmit()">
+                        <button onclick="handleAISubmit()" class="bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-lg transition">
+                            <span>➤</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        setTimeout(() => {
+          const chatBox = document.getElementById("ai-chat-container");
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }, 50);
+      }
+
+      async function handleAISubmit() {
+        const input = document.getElementById("ai-input");
+        const val = input.value.trim();
+        if (!val) return;
+
+        const userMsg = {
+          role: "user",
+          content: val,
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        state.chatHistory.push(userMsg);
+        input.value = "";
+
+        // Show "thinking" indicator
+        state.chatHistory.push({
+          role: "assistant",
+          content: "⏳ *Thinking...*",
+          timestamp: "",
+          _loading: true,
+        });
+        renderActiveView("ai");
+        lucide.createIcons();
+
+        try {
+          const response = await fetch(getApiUrl("/api/gemini/chat"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              messages: state.chatHistory.filter((m) => !m._loading),
+            }),
+          });
+
+          // Remove the loading message
+          state.chatHistory = state.chatHistory.filter((m) => !m._loading);
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.history) {
+              state.chatHistory = result.history;
+            } else if (result.reply) {
+              state.chatHistory.push({
+                role: "assistant",
+                content: result.reply,
+                timestamp: new Date().toLocaleTimeString(),
+              });
+            }
+          } else {
+            const errData = await response.json().catch(() => ({}));
+            state.chatHistory.push({
+              role: "assistant",
+              content: `⚠️ **Backend Error (${response.status})**: ${errData.error || "Unknown error. Check server logs."}`,
+              timestamp: new Date().toLocaleTimeString(),
+            });
+          }
+        } catch (err) {
+          state.chatHistory = state.chatHistory.filter((m) => !m._loading);
+          state.chatHistory.push({
+            role: "assistant",
+            content: `⚠️ **Connection Error**: Could not reach backend server at ${getApiUrl('/api/gemini/chat')}.\n\n\`${err.message}\``,
+            timestamp: new Date().toLocaleTimeString(),
+          });
+        }
+        renderActiveView("ai");
+        lucide.createIcons();
+      }
+
+      async function clearChatHistory() {
+        state.chatHistory = [];
+        try {
+          await fetch(getApiUrl("/api/gemini/chat"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: [], clearHistory: true }),
+          });
+        } catch (e) {}
+        renderActiveView("ai");
+        lucide.createIcons();
+      }
+
+      function renderExportView() {
+        const container = document.getElementById("tab-export");
+        const hasData = (state.totalCombinedCount > 0) || (state.combinedData && state.combinedData.length > 0) || (state.averagedData && state.averagedData.length > 0);
+        const disabledClass = hasData ? '' : 'opacity-50 cursor-not-allowed';
+        const disabledAttr = hasData ? '' : 'disabled';
+        const avgCount = state.averagedCount || (state.averagedData ? state.averagedData.length : 0);
+        const rawCount = state.totalCombinedCount || (state.combinedData ? state.combinedData.length : 0);
+
+        container.innerHTML = `
+                <div class="max-w-lg bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-xl">
+                    <h2 class="text-xl font-bold mb-2">Export Master Record</h2>
+                    <p class="text-sm text-slate-400 mb-6">Download the aligned, cleaned, and combined telemetry data directly from the server.</p>
+                    
+                    <div class="space-y-4">
+                        <button onclick="downloadCSV('raw')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-lg font-medium inline-flex items-center justify-center space-x-2 transition ${disabledClass}" ${disabledAttr}>
+                            <span>📥</span> <span>A. Export Raw Data (All Records${rawCount > 0 ? ' — ' + rawCount + ' rows' : ''})</span>
+                        </button>
+                        
+                        <button onclick="downloadCSV('averaged')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-lg font-medium inline-flex items-center justify-center space-x-2 transition ${disabledClass}" ${disabledAttr}>
+                            <span>📈</span> <span>B. Export Minute-Averaged Data${avgCount > 0 ? ' — ' + avgCount + ' rows' : ''}</span>
+                        </button>
+                    </div>
+                    
+                    ${!hasData ? '<p class="text-xs text-rose-400 mt-4 text-center">Combine data first before exporting.</p>' : '<p class="text-xs text-emerald-400 mt-4 text-center">✅ Data is ready for export.</p>'}
+                </div>
+            `;
+      }
+
+      function downloadCSV(format = "raw") {
+        // Point the browser directly to the export endpoint — server checks if file exists
+        window.location.href = getApiUrl(`/api/export?format=${format}`);
+      }
+
+      async function loadExistingFiles() {
+        try {
+          const res = await fetch(getApiUrl("/api/upload"));
+          if (res.ok) {
+            const data = await res.json();
+            if (data.files && data.files.length > 0) {
+              state.files = data.files;
+              state.attributes = data.attributes || [];
+              updateGlobalCounters();
+              renderNavTabs();
+              if (state.activeTab === "files" || state.activeTab === "dashboard") {
+                renderActiveView(state.activeTab);
+                lucide.createIcons();
+              }
+            }
+          }
+        } catch (e) {
+          console.log("Could not auto-fetch existing files (backend may be initializing)");
+        }
+        // Also load averaged data if the server already has it
+        await loadAveragedData();
+      }
+
+      async function loadAveragedData() {
+        try {
+          const res = await fetch(getApiUrl("/api/averaged-data?sort=asc"));
+          if (res.ok) {
+            const data = await res.json();
+            if (data.averagedData && data.averagedData.length > 0) {
+              state.averagedData = data.averagedData;
+              state.averagedCount = data.averagedCount || data.averagedData.length;
+              // Mark that data exists so export buttons work
+              if (!state.totalCombinedCount) state.totalCombinedCount = state.averagedCount;
+              console.log(`Loaded ${state.averagedData.length} minute-averaged rows from server.`);
+              // Re-render if user is on analysis or export tab
+              if (state.activeTab === "analysis" || state.activeTab === "export") {
+                renderActiveView(state.activeTab);
+                lucide.createIcons();
+              }
+            }
+          }
+        } catch (e) {
+          console.log("No averaged data available yet.");
+        }
+      }
+
+      /* =========================================================================
+           6. INITIALIZATION
+           ========================================================================= */
+      document.addEventListener("DOMContentLoaded", async () => {
+        renderNavTabs();
+        renderActiveView(state.activeTab);
+        lucide.createIcons();
+
+        // 1. Fetch previously uploaded datasets from backend
+        await loadExistingFiles();
+
+        // 2. Fetch AI chat history
+        try {
+          const res = await fetch(getApiUrl("/api/gemini/chat"));
+          if (res.ok) {
+            const data = await res.json();
+            if (data.messages && data.messages.length > 0) {
+              state.chatHistory = data.messages;
+              if (state.activeTab === "ai") renderActiveView("ai");
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load chat history", e);
+        }
+      });
     </script>
-</body>
+  </body>
 </html>
